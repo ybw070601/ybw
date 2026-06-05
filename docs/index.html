@@ -9,22 +9,24 @@
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
         .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h2 { color: #333; border-left: 5px solid #4CAF50; padding-left: 15px; }
+        .rank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .rank-card { background: #f9f9f9; padding: 10px; border-radius: 8px; }
+        .rank-card h3 { margin-top: 0; font-size: 1.1rem; }
+        .rank-list { list-style: none; padding: 0; margin: 0; }
+        .rank-list li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .rank-number { font-weight: bold; color: #ff9800; margin-right: 8px; }
         .flex-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
         .chart-box { flex: 2; min-width: 300px; }
-        .rank-box { flex: 1; min-width: 250px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #4CAF50; color: white; cursor: pointer; }
         th:hover { background-color: #45a049; }
         .footer { margin-top: 20px; color: #666; font-size: 12px; text-align: center; }
-        .rank-card { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
-        .rank-card h3 { margin-top: 0; }
-        .rank-list { list-style: none; padding: 0; }
-        .rank-list li { padding: 6px 0; border-bottom: 1px solid #eee; }
-        .rank-number { font-weight: bold; color: #ff9800; margin-right: 8px; }
         button { margin: 5px; padding: 8px 12px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
         button:hover { background: #45a049; }
-        .legend-color { display: inline-block; width: 16px; height: 16px; margin-right: 5px; vertical-align: middle; border-radius: 2px; }
+        @media (max-width: 800px) {
+            .rank-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -39,14 +41,22 @@
                 <button id="btnTotal">累计送花</button>
             </div>
         </div>
-        <div class="rank-box">
+        <div class="rank-grid">
             <div class="rank-card">
                 <h3>🏆 今日送花排名</h3>
-                <ol id="rankToday" class="rank-list"></ol>
+                <ol id="rankTodayGift" class="rank-list"></ol>
+            </div>
+            <div class="rank-card">
+                <h3>👥 今日人数排名</h3>
+                <ol id="rankTodayUsers" class="rank-list"></ol>
+            </div>
+            <div class="rank-card">
+                <h3>📊 人均送花排名</h3>
+                <ol id="rankAvg" class="rank-list"></ol>
             </div>
             <div class="rank-card">
                 <h3>🏆 累计送花排名</h3>
-                <ol id="rankTotal" class="rank-list"></ol>
+                <ol id="rankTotalGift" class="rank-list"></ol>
             </div>
         </div>
     </div>
@@ -69,13 +79,13 @@
     let historyData = null;
     let latestData = null;
 
-    // 自定义颜色映射（严格按照您的要求）
+    // 自定义颜色映射
     const colorMap = {
         "张桂源": "#F9E511",
         "张函瑞": "#779649",
         "王橹杰": "#4ab7cc",
         "左奇函": "#10319f",
-        "左齐函": "#10319f",   // 兼容可能的别名
+        "左齐函": "#10319f",
         "陈奕恒": "#C1A1CA",
         "杨博文": "#F4A9AA",
         "陈浚明": "#E60012"
@@ -83,7 +93,6 @@
 
     function getColorForName(name) {
         if (colorMap[name]) return colorMap[name];
-        // 如果不在映射中，生成一种颜色（备用）
         let hash = 0;
         for (let i = 0; i < name.length; i++) {
             hash = ((hash << 5) - hash) + name.charCodeAt(i);
@@ -110,7 +119,6 @@
         const timestamps = historyData.timestamps;
         const series = historyData.series;
         const names = Object.keys(series);
-        
         const datasets = [];
         names.forEach(name => {
             const dataPoints = series[name][currentMetric] || [];
@@ -126,7 +134,6 @@
                 pointHoverRadius: 5
             });
         });
-        
         if (chart) chart.destroy();
         const ctx = document.getElementById('trendChart').getContext('2d');
         chart = new Chart(ctx, {
@@ -175,23 +182,29 @@
                 </tr>`;
             tbody.innerHTML += row;
         });
-        
-        const sortedByToday = [...latestData].sort((a,b) => b.today_gift - a.today_gift);
-        const sortedByTotal = [...latestData].sort((a,b) => b.total_gift - a.total_gift);
-        
-        const rankTodayList = document.getElementById('rankToday');
-        const rankTotalList = document.getElementById('rankTotal');
-        rankTodayList.innerHTML = '';
-        rankTotalList.innerHTML = '';
-        sortedByToday.forEach((item, idx) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="rank-number">${idx+1}.</span> ${item.name} — ${item.today_gift} 朵`;
-            rankTodayList.appendChild(li);
+        const sortedByTodayGift = [...latestData].sort((a,b) => b.today_gift - a.today_gift);
+        const sortedByTodayUsers = [...latestData].sort((a,b) => b.today_users - a.today_users);
+        const sortedByAvg = [...latestData].sort((a,b) => b.avg - a.avg);
+        const sortedByTotalGift = [...latestData].sort((a,b) => b.total_gift - a.total_gift);
+        const rankTodayGift = document.getElementById('rankTodayGift');
+        const rankTodayUsers = document.getElementById('rankTodayUsers');
+        const rankAvg = document.getElementById('rankAvg');
+        const rankTotalGift = document.getElementById('rankTotalGift');
+        rankTodayGift.innerHTML = '';
+        rankTodayUsers.innerHTML = '';
+        rankAvg.innerHTML = '';
+        rankTotalGift.innerHTML = '';
+        sortedByTodayGift.forEach((item, idx) => {
+            rankTodayGift.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.today_gift} 朵</li>`;
         });
-        sortedByTotal.forEach((item, idx) => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="rank-number">${idx+1}.</span> ${item.name} — ${item.total_gift} 朵`;
-            rankTotalList.appendChild(li);
+        sortedByTodayUsers.forEach((item, idx) => {
+            rankTodayUsers.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.today_users} 人</li>`;
+        });
+        sortedByAvg.forEach((item, idx) => {
+            rankAvg.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.avg} 朵/人</li>`;
+        });
+        sortedByTotalGift.forEach((item, idx) => {
+            rankTotalGift.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.total_gift} 朵</li>`;
         });
     }
 
