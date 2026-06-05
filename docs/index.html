@@ -211,7 +211,6 @@
         }
         const next = new Date(now);
         next.setMinutes(nextMinutes, 0, 0);
-        // 格式化为北京时间字符串
         return next.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
     }
 
@@ -301,6 +300,7 @@
             if (latestData) {
                 sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
             }
+            // 准备数据集时记录每个数据点的值，用于 tooltip 排序
             const datasets = [];
             names.forEach(name => {
                 const points = series[name]?.[metric.key] || [];
@@ -366,7 +366,18 @@
                     maintainAspectRatio: true,
                     plugins: {
                         legend: { display: false },
-                        tooltip: { mode: 'index', intersect: false }
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                // 自定义 tooltip 排序：按当前数据点的值从高到低排列
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.parsed.y;
+                                    return `${label}: ${value} ${metric.unit}`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: { beginAtZero: true, title: { display: true, text: metric.unit, font: { weight: 'bold' } } },
@@ -405,7 +416,7 @@
                 <td>${item.today_users}</td>
                 <td>${item.avg}</td>
                 <td>${item.total_gift}</td>
-            </td>`;
+            </tr>`;
             tbody.innerHTML += row;
         });
     }
