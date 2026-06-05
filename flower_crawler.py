@@ -130,7 +130,6 @@ def update_history(current_data_list):
                 "avg": [],
                 "total_gift": []
             }
-        # 确保每个键都存在
         for key in ["today_gift", "today_users", "avg", "total_gift"]:
             if key not in history["series"][name]:
                 history["series"][name][key] = []
@@ -138,7 +137,6 @@ def update_history(current_data_list):
         history["series"][name]["today_users"].append(item["today_users"])
         history["series"][name]["avg"].append(item["avg"])
         history["series"][name]["total_gift"].append(item["total_gift"])
-        # 保持长度
         for key in ["today_gift", "today_users", "avg", "total_gift"]:
             if len(history["series"][name][key]) > max_points:
                 history["series"][name][key] = history["series"][name][key][-max_points:]
@@ -147,7 +145,6 @@ def update_history(current_data_list):
 
 def generate_compare_data(current_data_list, history):
     """生成杨博文今天与昨天同一时刻的对比数据（基于北京时间）"""
-    # 查找杨博文当前数据
     yang = None
     for item in current_data_list:
         if item["name"] == "杨博文":
@@ -156,27 +153,26 @@ def generate_compare_data(current_data_list, history):
     if not yang:
         return None
 
-    # 获取历史数据中的杨博文系列
     yang_history = history.get("series", {}).get("杨博文", {})
     timestamps = history.get("timestamps", [])
     if not timestamps or not yang_history.get("today_gift"):
         return None
 
-    # 获取当前北京时间
     now = beijing_now()
-    # 昨天同一时刻（精确到分钟）
     yesterday = now - timedelta(days=1)
-    target_prefix = yesterday.strftime("%Y-%m-%d %H:%M")
+    # 转换为 naive datetime 以便与字符串比较
+    yesterday_naive = yesterday.replace(tzinfo=None)
+    target_prefix = yesterday_naive.strftime("%Y-%m-%d %H:%M")
 
-    # 在 timestamps 中找到匹配的索引
     best_idx = None
     for idx, ts in enumerate(timestamps):
         if ts.startswith(target_prefix):
             best_idx = idx
             break
-    # 如果没找到精确匹配，找时间差最小的点
     if best_idx is None:
-        best_idx = min(range(len(timestamps)), key=lambda i: abs((datetime.strptime(timestamps[i], "%Y-%m-%d %H:%M:%S") - yesterday).total_seconds()))
+        # 计算最小时间差
+        ts_dt_list = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S") for ts in timestamps]
+        best_idx = min(range(len(ts_dt_list)), key=lambda i: abs((ts_dt_list[i] - yesterday_naive).total_seconds()))
 
     yesterday_data = {
         "timestamp": timestamps[best_idx],
@@ -222,13 +218,10 @@ def main():
         time.sleep(random.uniform(1.5, 3))
 
     os.makedirs("docs", exist_ok=True)
-    # 保存最新快照
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
-    # 更新历史并生成对比
     update_history(results)
-    # 重新加载历史
     history = load_history()
     compare_data = generate_compare_data(results, history)
     if compare_data:
