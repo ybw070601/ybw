@@ -6,33 +6,99 @@
     <title>百度送花数据看板 - 趋势与对比</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1600px; margin: 0 auto; }
         h2 { color: #333; border-left: 5px solid #4CAF50; padding-left: 15px; margin-bottom: 20px; }
         h3 { margin: 20px 0 10px 0; color: #2c3e50; }
+        
+        /* 对比表格样式 */
         .compare-box { background: white; border-radius: 12px; padding: 15px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .compare-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .compare-table th, .compare-table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         .compare-table th { background-color: #2196F3; color: white; }
-        .rank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .rank-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 15px; transition: transform 0.2s; }
+        
+        /* 四个独立卡片 - 左右布局 */
+        .rank-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
         .rank-card:hover { transform: translateY(-3px); }
-        .rank-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .rank-list { list-style: none; padding: 0; margin: 10px 0; max-height: 200px; overflow-y: auto; }
-        .rank-list li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
-        .rank-number { font-weight: bold; color: #ff9800; margin-right: 8px; }
-        .mini-chart { margin-top: 12px; height: 120px; position: relative; }
-        canvas { width: 100% !important; height: 120px !important; }
-        table.data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .data-table th { background-color: #4CAF50; color: white; cursor: pointer; }
+        .card-header {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-left: 5px solid #4CAF50;
+            padding-left: 15px;
+        }
+        .card-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .rank-list-container {
+            flex: 1;
+            min-width: 200px;
+        }
+        .chart-container {
+            flex: 3;
+            min-width: 300px;
+            height: 260px;
+            position: relative;
+        }
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+        .rank-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 1rem;
+        }
+        .rank-number {
+            font-weight: bold;
+            color: #ff9800;
+            margin-right: 10px;
+        }
+        canvas { width: 100% !important; height: 100% !important; }
+        
+        /* 详细数据表 */
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .data-table th {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
         .data-table th:hover { background-color: #45a049; }
-        /* 名字列颜色 + 行悬浮浅色背景 */
-        .data-table td:first-child { font-weight: bold; }
-        .data-table tr:hover td:first-child { filter: brightness(0.9); }
-        .footer { margin-top: 20px; color: #666; font-size: 12px; text-align: center; }
+        /* 整行背景色在 js 中动态设置，这里不预设 */
+        .footer {
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+        }
         @media (max-width: 800px) {
-            .rank-grid { grid-template-columns: 1fr; }
+            .card-content { flex-direction: column; }
+            .chart-container { height: 220px; }
         }
     </style>
 </head>
@@ -46,7 +112,8 @@
         <div id="compareTable">加载中...</div>
     </div>
 
-    <div class="rank-grid" id="rankGrid"></div>
+    <!-- 四个卡片将动态插入此处 -->
+    <div id="rankCardsContainer"></div>
 
     <h3>📋 详细数据表 (点击表头排序)</h3>
     <table class="data-table" id="dataTable">
@@ -64,9 +131,9 @@
     let latestData = null;
     let historyData = null;
     let compareData = null;
-    let charts = {};
+    let charts = {};   // 存储每个指标的 Chart 实例
 
-    // 颜色映射（文字颜色）
+    // 颜色映射（文字颜色和行背景色）
     const colorMap = {
         "张桂源": "#F9E511",
         "张函瑞": "#779649",
@@ -92,27 +159,24 @@
             document.getElementById('compareTable').innerHTML = '<p style="color:red;">暂无对比数据，请等待自动抓取...</p>';
         }
     }
-
     function renderCompareTable() {
         if (!compareData) return;
         const today = compareData.today;
         const yesterday = compareData.yesterday;
         const html = `
             <table class="compare-table">
-                <thead>
-                    <tr><th>指标</th><th>今日 (${compareData.update_time})</th><th>昨日 (${compareData.yesterday_timestamp})</th><th>差值</th></tr>
-                </thead>
+                <thead><tr><th>指标</th><th>今日 (${compareData.update_time})</th><th>昨日 (${compareData.yesterday_timestamp})</th><th>差值</th></tr></thead>
                 <tbody>
-                    <tr><td>今日送花 (朵)</td><td>${today.today_gift}</td><td>${yesterday.today_gift}</td><td style="color: ${today.today_gift - yesterday.today_gift >= 0 ? 'green' : 'red'}">${today.today_gift - yesterday.today_gift}</td></tr>
-                    <tr><td>今日人数 (人)</td><td>${today.today_users}</td><td>${yesterday.today_users}</td><td style="color: ${today.today_users - yesterday.today_users >= 0 ? 'green' : 'red'}">${today.today_users - yesterday.today_users}</td></tr>
-                    <tr><td>人均 (朵/人)</td><td>${today.avg}</td><td>${yesterday.avg}</td><td style="color: ${today.avg - yesterday.avg >= 0 ? 'green' : 'red'}">${(today.avg - yesterday.avg).toFixed(2)}</td></tr>
+                    <tr><td>今日送花 (朵)</td><td>${today.today_gift}</td><td>${yesterday.today_gift}</td><td style="color:${today.today_gift - yesterday.today_gift >=0?'green':'red'}">${today.today_gift - yesterday.today_gift}</td></tr>
+                    <tr><td>今日人数 (人)</td><td>${today.today_users}</td><td>${yesterday.today_users}</td><td style="color:${today.today_users - yesterday.today_users >=0?'green':'red'}">${today.today_users - yesterday.today_users}</td></tr>
+                    <tr><td>人均 (朵/人)</td><td>${today.avg}</td><td>${yesterday.avg}</td><td style="color:${today.avg - yesterday.avg >=0?'green':'red'}">${(today.avg - yesterday.avg).toFixed(2)}</td></tr>
                 </tbody>
             </table>
         `;
         document.getElementById('compareTable').innerHTML = html;
     }
 
-    // 加载历史数据
+    // 加载历史数据并渲染四个卡片
     async function loadHistory() {
         try {
             const resp = await fetch('history.json?_=' + Date.now());
@@ -122,31 +186,38 @@
             console.warn('历史数据加载失败');
             historyData = { timestamps: [], series: {} };
         }
-        renderAllMiniCharts();
+        renderFourCards();
     }
 
-    function renderAllMiniCharts() {
-        if (!historyData || !historyData.timestamps || historyData.timestamps.length === 0) return;
+    function renderFourCards() {
+        if (!historyData || !historyData.timestamps) return;
         const timestamps = historyData.timestamps;
         const series = historyData.series;
         const names = Object.keys(series);
         const metrics = [
-            { key: 'today_gift', title: '🏆 今日送花排名', unit: '朵', rankKey: 'today_gift' },
-            { key: 'today_users', title: '👥 今日人数排名', unit: '人', rankKey: 'today_users' },
-            { key: 'avg', title: '📊 人均送花排名', unit: '朵/人', rankKey: 'avg' },
-            { key: 'total_gift', title: '🏆 累计送花排名', unit: '朵', rankKey: 'total_gift' }
+            { key: 'today_gift', title: '🏆 今日送花排名', unit: '朵', dataKey: 'today_gift' },
+            { key: 'today_users', title: '👥 今日人数排名', unit: '人', dataKey: 'today_users' },
+            { key: 'avg', title: '📊 人均送花排名', unit: '朵/人', dataKey: 'avg' },
+            { key: 'total_gift', title: '🏆 累计送花排名', unit: '朵', dataKey: 'total_gift' }
         ];
-        const grid = document.getElementById('rankGrid');
-        grid.innerHTML = '';
+        const container = document.getElementById('rankCardsContainer');
+        container.innerHTML = '';
         metrics.forEach(metric => {
-            const card = document.createElement('div');
-            card.className = 'rank-card';
-            card.innerHTML = `
-                <h3>${metric.title}</h3>
-                <ol id="rank-${metric.key}" class="rank-list"></ol>
-                <div class="mini-chart"><canvas id="chart-${metric.key}" width="400" height="120"></canvas></div>
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'rank-card';
+            cardDiv.innerHTML = `
+                <div class="card-header">${metric.title}</div>
+                <div class="card-content">
+                    <div class="rank-list-container">
+                        <ol id="rank-${metric.key}" class="rank-list"></ol>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="chart-${metric.key}" width="600" height="260"></canvas>
+                    </div>
+                </div>
             `;
-            grid.appendChild(card);
+            container.appendChild(cardDiv);
+            // 绘制折线图
             const datasets = [];
             names.forEach(name => {
                 const dataPoints = series[name][metric.key] || [];
@@ -157,8 +228,9 @@
                     borderColor: getColorForName(name),
                     backgroundColor: 'transparent',
                     tension: 0.2,
-                    borderWidth: 2,
-                    pointRadius: 2,
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
                     fill: false
                 });
             });
@@ -170,65 +242,22 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 9 } } }, tooltip: { mode: 'index' } },
-                    scales: { y: { beginAtZero: true, title: { display: false } }, x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 6 } } }
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: metric.unit } },
+                        x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 8 } }
+                    }
                 }
             });
         });
     }
 
-    // 加载最新数据并更新表格、排名
-    async function loadLatest() {
-        try {
-            const resp = await fetch('data.json?_=' + Date.now());
-            if (!resp.ok) throw new Error();
-            latestData = await resp.json();
-            updateTableAndRanks();
-            document.getElementById('updateTime').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
-        } catch(e) {
-            console.error(e);
-            document.getElementById('tableBody').innerHTML = '<tr><td colspan="5">暂无数据，请等待自动抓取</td></tr>';
-        }
-    }
-
-    function updateTableAndRanks() {
+    // 更新排名列表（在最新数据加载后调用）
+    function updateRanks() {
         if (!latestData) return;
-        // 更新表格（名字列应用专属颜色）
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        latestData.forEach(item => {
-            const color = getColorForName(item.name);
-            const row = document.createElement('tr');
-            // 名字列
-            const nameCell = document.createElement('td');
-            nameCell.textContent = item.name;
-            nameCell.style.color = color;
-            nameCell.style.fontWeight = 'bold';
-            row.appendChild(nameCell);
-            // 其他列
-            const giftCell = document.createElement('td');
-            giftCell.textContent = item.today_gift;
-            row.appendChild(giftCell);
-            const usersCell = document.createElement('td');
-            usersCell.textContent = item.today_users;
-            row.appendChild(usersCell);
-            const avgCell = document.createElement('td');
-            avgCell.textContent = item.avg;
-            row.appendChild(avgCell);
-            const totalCell = document.createElement('td');
-            totalCell.textContent = item.total_gift;
-            row.appendChild(totalCell);
-            // 鼠标悬浮行背景色（浅色）
-            row.addEventListener('mouseenter', () => {
-                row.style.backgroundColor = color + '20'; // 16%透明度
-            });
-            row.addEventListener('mouseleave', () => {
-                row.style.backgroundColor = '';
-            });
-            tbody.appendChild(row);
-        });
-
-        // 更新四个排名列表
         const metrics = [
             { key: 'today_gift', dataKey: 'today_gift', unit: '朵' },
             { key: 'today_users', dataKey: 'today_users', unit: '人' },
@@ -248,6 +277,52 @@
         });
     }
 
+    // 加载最新数据并更新表格（整行背景色）
+    async function loadLatest() {
+        try {
+            const resp = await fetch('data.json?_=' + Date.now());
+            if (!resp.ok) throw new Error();
+            latestData = await resp.json();
+            updateTableAndRanks();
+            document.getElementById('updateTime').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
+        } catch(e) {
+            console.error(e);
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="5">暂无数据，请等待自动抓取</td></tr>';
+        }
+    }
+
+    function updateTableAndRanks() {
+        if (!latestData) return;
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        latestData.forEach(item => {
+            const color = getColorForName(item.name);
+            const row = tbody.insertRow();
+            // 设置整行背景色（浅色透明度 20%）
+            row.style.backgroundColor = color + '20';
+            // 名字列
+            const nameCell = row.insertCell(0);
+            nameCell.textContent = item.name;
+            nameCell.style.color = color;
+            nameCell.style.fontWeight = 'bold';
+            // 今日送花
+            const giftCell = row.insertCell(1);
+            giftCell.textContent = item.today_gift;
+            // 今日人数
+            const usersCell = row.insertCell(2);
+            usersCell.textContent = item.today_users;
+            // 人均
+            const avgCell = row.insertCell(3);
+            avgCell.textContent = item.avg;
+            // 累计送花
+            const totalCell = row.insertCell(4);
+            totalCell.textContent = item.total_gift;
+        });
+        // 更新排名列表
+        updateRanks();
+    }
+
+    // 表格排序（保持整行背景色）
     function setupTableSort() {
         const ths = document.querySelectorAll('#dataTable th');
         ths.forEach(th => {
@@ -263,32 +338,36 @@
                 tbody.innerHTML = '';
                 sorted.forEach(item => {
                     const color = getColorForName(item.name);
-                    const row = document.createElement('tr');
-                    const nameCell = document.createElement('td');
+                    const row = tbody.insertRow();
+                    row.style.backgroundColor = color + '20';
+                    const nameCell = row.insertCell(0);
                     nameCell.textContent = item.name;
                     nameCell.style.color = color;
                     nameCell.style.fontWeight = 'bold';
-                    row.appendChild(nameCell);
-                    const giftCell = document.createElement('td'); giftCell.textContent = item.today_gift; row.appendChild(giftCell);
-                    const usersCell = document.createElement('td'); usersCell.textContent = item.today_users; row.appendChild(usersCell);
-                    const avgCell = document.createElement('td'); avgCell.textContent = item.avg; row.appendChild(avgCell);
-                    const totalCell = document.createElement('td'); totalCell.textContent = item.total_gift; row.appendChild(totalCell);
-                    row.addEventListener('mouseenter', () => { row.style.backgroundColor = color + '20'; });
-                    row.addEventListener('mouseleave', () => { row.style.backgroundColor = ''; });
-                    tbody.appendChild(row);
+                    row.insertCell(1).textContent = item.today_gift;
+                    row.insertCell(2).textContent = item.today_users;
+                    row.insertCell(3).textContent = item.avg;
+                    row.insertCell(4).textContent = item.total_gift;
                 });
             });
         });
     }
+
+    // 定时刷新历史（每10分钟）
+    setInterval(async () => {
+        await loadHistory();
+    }, 600000);
+    // 定时刷新最新数据（每60秒）
+    setInterval(() => {
+        loadLatest();
+        loadCompare();
+    }, 60000);
 
     window.onload = async () => {
         await loadHistory();
         await loadLatest();
         await loadCompare();
         setupTableSort();
-        setInterval(loadLatest, 60000);      // 每分钟刷新最新数据
-        setInterval(loadCompare, 60000);     // 每分钟刷新对比
-        setInterval(async () => { await loadHistory(); }, 600000); // 每10分钟刷新历史
     };
 </script>
 </body>
