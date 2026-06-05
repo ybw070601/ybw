@@ -52,7 +52,6 @@
             align-items: center;
             padding: 10px 8px;
             border-bottom: 1px solid #edf2f7;
-            font-size: 0.9rem;
             gap: 12px;
             flex-wrap: nowrap;
         }
@@ -70,13 +69,19 @@
             flex-shrink: 0;
             cursor: help;
         }
-        .rank-value-gap {
+        .rank-value {
             flex: 1;
             font-weight: 600;
             color: #2c3e50;
             text-align: left;
             white-space: nowrap;
-            overflow-x: auto;
+        }
+        .rank-gap {
+            width: 100px;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #555;
+            white-space: nowrap;
         }
         .rank-right {
             flex: 2.5;
@@ -123,7 +128,7 @@
             .rank-card { flex-direction: column; }
             .rank-left { border-right: none; border-bottom: 1px solid #e9ecef; }
             .rank-right .chart-container { height: 260px; }
-            .rank-value-gap { white-space: normal; word-break: keep-all; }
+            .rank-gap { width: auto; }
         }
     </style>
 </head>
@@ -302,17 +307,17 @@
                     const prevValue = idx > 0 ? sorted[idx-1][metric.dataKey] : null;
                     let gapText = '';
                     if (idx === 0) {
-                        gapText = '';
+                        gapText = '—';
                     } else {
                         const diff = prevValue - item[metric.dataKey];
-                        gapText = ` -${diff.toFixed(0)} ${metric.unit}`;
+                        gapText = `-${diff.toFixed(0)} ${metric.unit}`;
                     }
-                    const valueWithGap = `${item[metric.dataKey]} ${metric.unit}${gapText}`;
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <div class="rank-number">${idx+1}</div>
                         <div class="rank-color" style="background-color: ${getColorForName(item.name)};" title="${item.name}"></div>
-                        <div class="rank-value-gap">${valueWithGap}</div>
+                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
+                        <div class="rank-gap">${gapText}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -327,7 +332,7 @@
                     responsive: true,
                     maintainAspectRatio: true,
                     plugins: {
-                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                        legend: { display: false },  // 不显示图例（不显示名字）
                         tooltip: { mode: 'index', intersect: false }
                     },
                     scales: {
@@ -345,7 +350,7 @@
             if (!resp.ok) throw new Error();
             latestData = await resp.json();
             updateTable();
-            updateAllRankListsWithGap();
+            updateAllRankLists();
             document.getElementById('updateTime').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
         } catch(e) {
             console.error(e);
@@ -371,7 +376,7 @@
         });
     }
 
-    function updateAllRankListsWithGap() {
+    function updateAllRankLists() {
         if (!latestData) return;
         const metrics = [
             { key: 'today_gift', dataKey: 'today_gift', unit: '朵' },
@@ -388,17 +393,17 @@
                     const prevValue = idx > 0 ? sorted[idx-1][metric.dataKey] : null;
                     let gapText = '';
                     if (idx === 0) {
-                        gapText = '';
+                        gapText = '—';
                     } else {
                         const diff = prevValue - item[metric.dataKey];
-                        gapText = ` -${diff.toFixed(0)} ${metric.unit}`;
+                        gapText = `-${diff.toFixed(0)} ${metric.unit}`;
                     }
-                    const valueWithGap = `${item[metric.dataKey]} ${metric.unit}${gapText}`;
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <div class="rank-number">${idx+1}</div>
                         <div class="rank-color" style="background-color: ${getColorForName(item.name)};" title="${item.name}"></div>
-                        <div class="rank-value-gap">${valueWithGap}</div>
+                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
+                        <div class="rank-gap">${gapText}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -428,7 +433,7 @@
                         <td>${item.today_users}</td>
                         <td>${item.avg}</td>
                         <td>${item.total_gift}</td>
-                    </table>`;
+                    </tr>`;
                 });
             });
         });
