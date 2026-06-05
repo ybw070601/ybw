@@ -63,39 +63,9 @@ def fetch_data(baikeid, name):
 
     return result
 
-def generate_html(data_list):
-    rows = ""
-    for d in data_list:
-        rows += f"""
-        <tr>
-            <td>{d['name']}</td><td>{d['id']}</td><td>{d['today_gift']}</td>
-            <td>{d['today_users']}</td><td>{d['avg']}</td><td>{d['total_gift']}</td>
-            <td>{d['status']}</td>
-        </tr>
-        """
-    html = f"""<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>百度送花实时数据</title>
-<style>
-body {{ font-family: Arial, sans-serif; margin: 20px; }}
-h2 {{ color: #333; }}
-table {{ border-collapse: collapse; width: 100%; margin-top: 20px; }}
-th, td {{ border: 1px solid #ccc; padding: 8px 12px; text-align: center; }}
-th {{ background-color: #f2f2f2; }}
-.footer {{ margin-top: 20px; color: #666; font-size: 12px; }}
-</style>
-</head>
-<body>
-<h2>🌸 百度送花数据（每30分钟自动更新）</h2>
-<table>
-<thead><tr><th>名字</th><th>ID</th><th>今日送花</th><th>今日人数</th><th>人均</th><th>累计送花</th><th>状态</th></tr></thead>
-<tbody>{rows}</tbody>
-</table>
-<div class="footer">最后更新: {time.strftime('%Y-%m-%d %H:%M:%S')}</div>
-</body>
-</html>"""
-    return html
+def generate_json(data_list):
+    import json
+    return json.dumps(data_list, ensure_ascii=False, indent=2)
 
 def main():
     tasks = []
@@ -108,16 +78,18 @@ def main():
             if not line or ',' not in line: continue
             bid, name = line.split(',', 1)
             tasks.append((bid.strip(), name.strip()))
+    
     print(f"共 {len(tasks)} 个任务")
     results = []
     for bid, name in tasks:
         print(f"抓取: {name}")
         results.append(fetch_data(bid, name))
         time.sleep(random.uniform(1, 2))
+    
     os.makedirs("docs", exist_ok=True)
-    with open(OUTPUT_HTML, "w", encoding="utf-8") as f:
-        f.write(generate_html(results))
-    print("已生成 docs/index.html")
-
-if __name__ == "__main__":
-    main()
+    # 保存 JSON 数据
+    with open("docs/data.json", "w", encoding="utf-8") as f:
+        f.write(generate_json(results))
+    # 保存 HTML（可选，也可以用上面的静态 HTML 作为模板）
+    # 但建议保留静态 HTML，只更新 JSON
+    print("已生成 docs/data.json")
