@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百度送花数据 - 等待首次抓取</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; }
+        .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .status { color: #666; font-size: 14px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #4CAF50; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🌸 百度送花数据看板</h2>
+    <div class="info">
+        ⏳ 数据正在抓取中，请稍后刷新页面。<br>
+        首次运行大约需要 1-2 分钟，之后每 30 分钟自动更新。
+    </div>
+    <table>
+        <thead>
+            <tr><th>名字</th><th>ID</th><th>今日送花</th><th>今日人数</th><th>人均</th><th>累计送花</th><th>状态</th></tr>
+        </thead>
+        <tbody id="data-body">
+            <tr><td colspan="7" style="text-align:center;">加载中...</td></tr>
+        </tbody>
+    </table>
+    <div class="status" id="update-time">等待首次更新...</div>
+</div>
+<script>
+    fetch('data.json')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('data-body');
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const row = `<tr>
+                    <td>${item.name}</td>
+                    <td>${item.id}</td>
+                    <td>${item.today_gift}</td>
+                    <td>${item.today_users}</td>
+                    <td>${item.avg}</td>
+                    <td>${item.total_gift}</td>
+                    <td>${item.status}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+            document.getElementById('update-time').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
+        })
+        .catch(err => {
+            document.getElementById('data-body').innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">暂无数据，请等待自动抓取</td></tr>';
+        });
+</script>
+</body>
+</html>
