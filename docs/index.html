@@ -3,83 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百度送花数据看板 - 排名 & 趋势图</title>
+    <title>百度送花数据看板 - 多指标趋势</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-left: 5px solid #4CAF50; padding-left: 15px; }
-        .rank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .rank-card { background: #f9f9f9; padding: 10px; border-radius: 8px; }
-        .rank-card h3 { margin-top: 0; font-size: 1.1rem; }
-        .rank-list { list-style: none; padding: 0; margin: 0; }
-        .rank-list li { padding: 6px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        h2 { color: #333; border-left: 5px solid #4CAF50; padding-left: 15px; margin-bottom: 20px; }
+        .rank-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .rank-card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 15px; transition: transform 0.2s; }
+        .rank-card:hover { transform: translateY(-3px); }
+        .rank-card h3 { margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .rank-list { list-style: none; padding: 0; margin: 10px 0; max-height: 200px; overflow-y: auto; }
+        .rank-list li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
         .rank-number { font-weight: bold; color: #ff9800; margin-right: 8px; }
-        .flex-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
-        .chart-box { flex: 2; min-width: 300px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .mini-chart { margin-top: 12px; height: 120px; position: relative; }
+        canvas { width: 100% !important; height: 120px !important; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #4CAF50; color: white; cursor: pointer; }
         th:hover { background-color: #45a049; }
         .footer { margin-top: 20px; color: #666; font-size: 12px; text-align: center; }
-        button { margin: 5px; padding: 8px 12px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
-        button:hover { background: #45a049; }
         @media (max-width: 800px) {
-            .rank-grid { grid-template-columns: 1fr 1fr; }
+            .rank-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 <div class="container">
     <h2>🌸 百度送花数据看板</h2>
-    <div class="flex-row">
-        <div class="chart-box">
-            <canvas id="trendChart" width="400" height="200"></canvas>
-            <div style="margin-top: 10px;">
-                <label>📈 指标选择：</label>
-                <button id="btnToday">今日送花</button>
-                <button id="btnTotal">累计送花</button>
-            </div>
-        </div>
-        <div class="rank-grid">
-            <div class="rank-card">
-                <h3>🏆 今日送花排名</h3>
-                <ol id="rankTodayGift" class="rank-list"></ol>
-            </div>
-            <div class="rank-card">
-                <h3>👥 今日人数排名</h3>
-                <ol id="rankTodayUsers" class="rank-list"></ol>
-            </div>
-            <div class="rank-card">
-                <h3>📊 人均送花排名</h3>
-                <ol id="rankAvg" class="rank-list"></ol>
-            </div>
-            <div class="rank-card">
-                <h3>🏆 累计送花排名</h3>
-                <ol id="rankTotalGift" class="rank-list"></ol>
-            </div>
-        </div>
-    </div>
-    
+    <div class="rank-grid" id="rankGrid"></div>
+
     <h3>📋 详细数据表 (点击表头排序)</h3>
     <table id="dataTable">
         <thead>
             <tr><th data-sort="name">名字</th><th data-sort="id">ID</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th><th>状态</th></tr>
         </thead>
         <tbody id="tableBody">
-            <tr><td colspan="7">加载中......</td></tr>
+            <tr><td colspan="7">加载中... ...</td></tr>
         </tbody>
     </table>
     <div class="footer" id="updateTime">等待数据...</div>
 </div>
 
 <script>
-    let chart = null;
-    let currentMetric = 'today_gift';
-    let historyData = null;
     let latestData = null;
+    let historyData = null;
+    let charts = {};
 
-    // 自定义颜色映射
+    // 颜色映射
     const colorMap = {
         "张桂源": "#F9E511",
         "张函瑞": "#779649",
@@ -90,76 +61,83 @@
         "杨博文": "#F4A9AA",
         "陈浚明": "#E60012"
     };
-
     function getColorForName(name) {
-        if (colorMap[name]) return colorMap[name];
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = ((hash << 5) - hash) + name.charCodeAt(i);
-            hash |= 0;
-        }
-        const hue = Math.abs(hash % 360);
-        return `hsl(${hue}, 70%, 60%)`;
+        return colorMap[name] || `hsl(${Math.abs(name.length * 37) % 360}, 70%, 60%)`;
     }
 
+    // 加载历史数据
     async function loadHistory() {
         try {
             const resp = await fetch('history.json?_=' + Date.now());
-            if (!resp.ok) throw new Error('history.json not found');
+            if (!resp.ok) throw new Error();
             historyData = await resp.json();
-            renderChart();
         } catch(e) {
-            console.warn('历史数据加载失败', e);
-            document.querySelector('.chart-box').innerHTML += '<p style="color:red;">暂无历史数据，等待自动抓取...</p>';
+            console.warn('历史数据加载失败');
+            historyData = { timestamps: [], series: {} };
         }
+        renderAllMiniCharts();
     }
 
-    function renderChart() {
+    // 渲染四个卡片的小折线图
+    function renderAllMiniCharts() {
         if (!historyData || !historyData.timestamps || historyData.timestamps.length === 0) return;
         const timestamps = historyData.timestamps;
         const series = historyData.series;
         const names = Object.keys(series);
-        const datasets = [];
-        names.forEach(name => {
-            const dataPoints = series[name][currentMetric] || [];
-            if (dataPoints.length === 0) return;
-            datasets.push({
-                label: name,
-                data: dataPoints,
-                borderColor: getColorForName(name),
-                backgroundColor: 'transparent',
-                tension: 0.2,
-                fill: false,
-                pointRadius: 3,
-                pointHoverRadius: 5
+        // 定义四个指标
+        const metrics = [
+            { key: 'today_gift', title: '🏆 今日送花排名', unit: '朵', rankKey: 'today_gift' },
+            { key: 'today_users', title: '👥 今日人数排名', unit: '人', rankKey: 'today_users' },
+            { key: 'avg', title: '📊 人均送花排名', unit: '朵/人', rankKey: 'avg' },
+            { key: 'total_gift', title: '🏆 累计送花排名', unit: '朵', rankKey: 'total_gift' }
+        ];
+        const grid = document.getElementById('rankGrid');
+        grid.innerHTML = '';
+        metrics.forEach(metric => {
+            const card = document.createElement('div');
+            card.className = 'rank-card';
+            card.innerHTML = `
+                <h3>${metric.title}</h3>
+                <ol id="rank-${metric.key}" class="rank-list"></ol>
+                <div class="mini-chart"><canvas id="chart-${metric.key}" width="400" height="120"></canvas></div>
+            `;
+            grid.appendChild(card);
+            // 准备数据集
+            const datasets = [];
+            names.forEach(name => {
+                const dataPoints = series[name][metric.key] || [];
+                if (dataPoints.length === 0) return;
+                datasets.push({
+                    label: name,
+                    data: dataPoints,
+                    borderColor: getColorForName(name),
+                    backgroundColor: 'transparent',
+                    tension: 0.2,
+                    borderWidth: 2,
+                    pointRadius: 2,
+                    fill: false
+                });
             });
-        });
-        if (chart) chart.destroy();
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: timestamps, datasets: datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { 
-                    tooltip: { mode: 'index', intersect: false },
-                    legend: { position: 'top' }
-                },
-                scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        title: { display: true, text: currentMetric === 'today_gift' ? '今日送花 (朵)' : '累计送花 (朵)' } 
-                    } 
+            const ctx = document.getElementById(`chart-${metric.key}`).getContext('2d');
+            if (charts[metric.key]) charts[metric.key].destroy();
+            charts[metric.key] = new Chart(ctx, {
+                type: 'line',
+                data: { labels: timestamps, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 9 } } }, tooltip: { mode: 'index' } },
+                    scales: { y: { beginAtZero: true, title: { display: false } }, x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 6 } } }
                 }
-            }
+            });
         });
     }
 
+    // 加载最新数据并更新排名
     async function loadLatest() {
         try {
             const resp = await fetch('data.json?_=' + Date.now());
-            if (!resp.ok) throw new Error('data.json not found');
+            if (!resp.ok) throw new Error();
             latestData = await resp.json();
             updateTableAndRanks();
             document.getElementById('updateTime').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
@@ -171,40 +149,32 @@
 
     function updateTableAndRanks() {
         if (!latestData) return;
+        // 更新表格
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         latestData.forEach(item => {
-            const row = `
+            tbody.innerHTML += `
                 <tr>
                     <td>${item.name}</td><td>${item.id}</td><td>${item.today_gift}</td>
                     <td>${item.today_users}</td><td>${item.avg}</td><td>${item.total_gift}</td>
                     <td>${item.status}</td>
                 </tr>`;
-            tbody.innerHTML += row;
         });
-        const sortedByTodayGift = [...latestData].sort((a,b) => b.today_gift - a.today_gift);
-        const sortedByTodayUsers = [...latestData].sort((a,b) => b.today_users - a.today_users);
-        const sortedByAvg = [...latestData].sort((a,b) => b.avg - a.avg);
-        const sortedByTotalGift = [...latestData].sort((a,b) => b.total_gift - a.total_gift);
-        const rankTodayGift = document.getElementById('rankTodayGift');
-        const rankTodayUsers = document.getElementById('rankTodayUsers');
-        const rankAvg = document.getElementById('rankAvg');
-        const rankTotalGift = document.getElementById('rankTotalGift');
-        rankTodayGift.innerHTML = '';
-        rankTodayUsers.innerHTML = '';
-        rankAvg.innerHTML = '';
-        rankTotalGift.innerHTML = '';
-        sortedByTodayGift.forEach((item, idx) => {
-            rankTodayGift.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.today_gift} 朵</li>`;
-        });
-        sortedByTodayUsers.forEach((item, idx) => {
-            rankTodayUsers.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.today_users} 人</li>`;
-        });
-        sortedByAvg.forEach((item, idx) => {
-            rankAvg.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.avg} 朵/人</li>`;
-        });
-        sortedByTotalGift.forEach((item, idx) => {
-            rankTotalGift.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item.total_gift} 朵</li>`;
+        // 更新四个排名列表
+        const metrics = [
+            { key: 'today_gift', dataKey: 'today_gift', unit: '朵' },
+            { key: 'today_users', dataKey: 'today_users', unit: '人' },
+            { key: 'avg', dataKey: 'avg', unit: '朵/人' },
+            { key: 'total_gift', dataKey: 'total_gift', unit: '朵' }
+        ];
+        metrics.forEach(metric => {
+            const sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
+            const rankList = document.getElementById(`rank-${metric.key}`);
+            if (!rankList) return;
+            rankList.innerHTML = '';
+            sorted.forEach((item, idx) => {
+                rankList.innerHTML += `<li><span class="rank-number">${idx+1}.</span> ${item.name} — ${item[metric.dataKey]} ${metric.unit}</li>`;
+            });
         });
     }
 
@@ -233,20 +203,15 @@
         });
     }
 
-    document.getElementById('btnToday').addEventListener('click', () => {
-        currentMetric = 'today_gift';
-        renderChart();
-    });
-    document.getElementById('btnTotal').addEventListener('click', () => {
-        currentMetric = 'total_gift';
-        renderChart();
-    });
-
     window.onload = async () => {
         await loadHistory();
         await loadLatest();
         setupTableSort();
         setInterval(loadLatest, 60000);
+        // 每10分钟重新加载历史数据（如果有新点）
+        setInterval(async () => {
+            await loadHistory();
+        }, 600000);
     };
 </script>
 </body>
