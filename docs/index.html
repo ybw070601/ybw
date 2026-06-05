@@ -199,7 +199,6 @@
         return hex + '66';
     }
 
-    // 计算下一个更新时刻（北京时间整点半点）
     function getNextUpdateTime() {
         const now = new Date();
         const minutes = now.getMinutes();
@@ -213,10 +212,8 @@
         next.setMinutes(nextMinutes, 0, 0);
         return next.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
     }
-
     function updateNextUpdateDisplay() {
-        const nextTime = getNextUpdateTime();
-        document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: ${nextTime}`;
+        document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: ${getNextUpdateTime()}`;
     }
 
     // 水印
@@ -300,7 +297,6 @@
             if (latestData) {
                 sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
             }
-            // 准备数据集时记录每个数据点的值，用于 tooltip 排序
             const datasets = [];
             names.forEach(name => {
                 const points = series[name]?.[metric.key] || [];
@@ -369,14 +365,8 @@
                         tooltip: {
                             mode: 'index',
                             intersect: false,
-                            callbacks: {
-                                // 自定义 tooltip 排序：按当前数据点的值从高到低排列
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    let value = context.parsed.y;
-                                    return `${label}: ${value} ${metric.unit}`;
-                                }
-                            }
+                            // 关键：按当前数据点的 y 值从大到小排序，实现从上到下的顺序
+                            itemSort: (a, b) => b.parsed.y - a.parsed.y
                         }
                     },
                     scales: {
