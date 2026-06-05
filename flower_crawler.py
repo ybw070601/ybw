@@ -109,21 +109,27 @@ def update_history(current_data_list):
     if len(history["timestamps"]) > max_points:
         history["timestamps"] = history["timestamps"][-max_points:]
         for name in history["series"]:
-            if len(history["series"][name]["today_gift"]) > max_points:
-                history["series"][name]["today_gift"] = history["series"][name]["today_gift"][-max_points:]
-            if len(history["series"][name]["total_gift"]) > max_points:
-                history["series"][name]["total_gift"] = history["series"][name]["total_gift"][-max_points:]
+            for key in ["today_gift", "today_users", "avg", "total_gift"]:
+                if key in history["series"][name] and len(history["series"][name][key]) > max_points:
+                    history["series"][name][key] = history["series"][name][key][-max_points:]
 
     for item in current_data_list:
         name = item["name"]
         if name not in history["series"]:
-            history["series"][name] = {"today_gift": [], "total_gift": []}
+            history["series"][name] = {
+                "today_gift": [],
+                "today_users": [],
+                "avg": [],
+                "total_gift": []
+            }
         history["series"][name]["today_gift"].append(item["today_gift"])
+        history["series"][name]["today_users"].append(item["today_users"])
+        history["series"][name]["avg"].append(item["avg"])
         history["series"][name]["total_gift"].append(item["total_gift"])
-        if len(history["series"][name]["today_gift"]) > max_points:
-            history["series"][name]["today_gift"] = history["series"][name]["today_gift"][-max_points:]
-        if len(history["series"][name]["total_gift"]) > max_points:
-            history["series"][name]["total_gift"] = history["series"][name]["total_gift"][-max_points:]
+        # 保持长度
+        for key in ["today_gift", "today_users", "avg", "total_gift"]:
+            if len(history["series"][name][key]) > max_points:
+                history["series"][name][key] = history["series"][name][key][-max_points:]
 
     save_history(history)
 
