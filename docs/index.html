@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #eef2f5; }
-        .container { max-width: 1600px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #eef2f5; position: relative; }
+        .container { max-width: 1600px; margin: 0 auto; position: relative; z-index: 1; }
         h2 { color: #1e466e; border-left: 6px solid #2c7be5; padding-left: 15px; margin-bottom: 20px; }
         h3 { margin: 20px 0 10px 0; color: #2c3e50; }
         .compare-box { background: white; border-radius: 16px; padding: 20px; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -52,21 +52,39 @@
             align-items: center;
             padding: 10px 8px;
             border-bottom: 1px solid #edf2f7;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            gap: 12px;
         }
         .rank-number {
             font-weight: bold;
             color: #f59c42;
-            margin-right: 12px;
-            width: 32px;
+            width: 40px;
+        }
+        .rank-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
         }
         .rank-name {
-            flex: 1;
+            flex: 1.5;
             font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .rank-value {
             font-weight: 600;
             color: #2c3e50;
+            width: 80px;
+            text-align: right;
+        }
+        .rank-gap {
+            width: 90px;
+            text-align: right;
+            font-size: 0.8rem;
+            color: #6c757d;
         }
         .rank-right {
             flex: 2.5;
@@ -100,6 +118,14 @@
         }
         .data-table th:hover { background: #1e2a3a; }
         .footer { margin-top: 30px; color: #4a5568; font-size: 13px; text-align: center; }
+        .color-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
         @media (max-width: 900px) {
             .rank-card { flex-direction: column; }
             .rank-left { border-right: none; border-bottom: 1px solid #e9ecef; }
@@ -123,7 +149,7 @@
     <h3>📋 详细数据表 (点击表头排序)</h3>
     <table class="data-table" id="dataTable">
         <thead>
-            <tr><th data-sort="name">名字</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
+            <tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
         </thead>
         <tbody id="tableBody">
             <tr><td colspan="5">加载中......</td></tr>
@@ -131,6 +157,9 @@
     </table>
     <div class="footer" id="updateTime">等待数据...</div>
 </div>
+
+<!-- 水印 -->
+<div id="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; background-repeat: repeat; opacity: 0.18;"></div>
 
 <script>
     let latestData = null;
@@ -152,7 +181,6 @@
     function getColorForName(name) {
         return colorMap[name] || `hsl(${Math.abs(name.length * 37) % 360}, 70%, 55%)`;
     }
-    // 背景色：60% 透明度 => alpha = 0.4 (即 40% 不透明度)
     function getLightBgColor(name) {
         const hex = getColorForName(name);
         if (hex.startsWith('#')) {
@@ -161,8 +189,26 @@
             const b = parseInt(hex.slice(5,7), 16);
             return `rgba(${r}, ${g}, ${b}, 0.4)`;
         }
-        return hex + '66'; // fallback
+        return hex + '66';
     }
+
+    // 水印生成
+    (function() {
+        const watermarkText = "YBW-裱你咋滴";
+        const canvas = document.createElement('canvas');
+        canvas.width = 260;
+        canvas.height = 160;
+        const ctx = canvas.getContext('2d');
+        ctx.font = "bold 22px 'Segoe UI', 'Microsoft YaHei'";
+        ctx.fillStyle = "rgba(80, 80, 80, 0.45)";
+        ctx.translate(30, 100);
+        ctx.rotate(-Math.PI / 9);
+        ctx.fillText(watermarkText, 0, 0);
+        const watermarkDiv = document.getElementById('watermark');
+        watermarkDiv.style.backgroundImage = `url(${canvas.toDataURL()})`;
+        watermarkDiv.style.backgroundRepeat = 'repeat';
+        watermarkDiv.style.backgroundSize = '220px 140px';
+    })();
 
     // 加载对比数据
     async function loadCompare() {
@@ -207,7 +253,7 @@
         renderAllCards();
     }
 
-    // 渲染四个卡片（左侧排名，右侧折线图）
+    // 渲染四个卡片（左侧排名+差距，右侧折线图）
     function renderAllCards() {
         if (!historyData || !historyData.timestamps || historyData.timestamps.length === 0) {
             document.getElementById('cardsContainer').innerHTML = '<p>暂无历史数据，等待自动抓取...</p>';
@@ -230,6 +276,20 @@
             if (latestData) {
                 sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
             }
+            // 计算与上一名的差距
+            const withGap = sorted.map((item, idx) => {
+                let gap = '';
+                if (idx === 0) {
+                    gap = '-';
+                } else {
+                    const prevValue = sorted[idx-1][metric.dataKey];
+                    const currValue = item[metric.dataKey];
+                    const diff = prevValue - currValue;
+                    gap = `-${diff.toFixed(0)} ${metric.unit}`;
+                }
+                return { ...item, gap };
+            });
+
             const datasets = [];
             names.forEach(name => {
                 const points = series[name]?.[metric.key] || [];
@@ -263,14 +323,16 @@
             container.appendChild(card);
 
             const rankUl = document.getElementById(`rank-list-${metric.key}`);
-            if (rankUl && sorted.length) {
+            if (rankUl && withGap.length) {
                 rankUl.innerHTML = '';
-                sorted.forEach((item, idx) => {
+                withGap.forEach((item, idx) => {
                     const li = document.createElement('li');
                     li.innerHTML = `
-                        <span class="rank-number">${idx+1}</span>
-                        <span class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</span>
-                        <span class="rank-value">${item[metric.dataKey]} ${metric.unit}</span>
+                        <div class="rank-number">${idx+1}</div>
+                        <div class="rank-color" style="background-color: ${getColorForName(item.name)}; width:24px; height:24px; border-radius:50%;"></div>
+                        <div class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</div>
+                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
+                        <div class="rank-gap">${item.gap}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -304,7 +366,7 @@
             if (!resp.ok) throw new Error();
             latestData = await resp.json();
             updateTable();
-            updateAllRankLists();
+            updateAllRankListsWithGap();
             document.getElementById('updateTime').innerHTML = `最后更新: ${new Date().toLocaleString()}`;
         } catch(e) {
             console.error(e);
@@ -318,18 +380,19 @@
         tbody.innerHTML = '';
         latestData.forEach(item => {
             const bgColor = getLightBgColor(item.name);
-            const row = `<tr style="background-color: ${bgColor}; transition: background 0.2s;">
-                <td style="font-weight: bold; color:${getColorForName(item.name)}">${item.name}</td>
+            const color = getColorForName(item.name);
+            const row = `<tr style="background-color: ${bgColor};">
+                <td><div class="color-dot" style="background-color: ${color};" title="${item.name}"></div></td>
                 <td>${item.today_gift}</td>
                 <td>${item.today_users}</td>
                 <td>${item.avg}</td>
                 <td>${item.total_gift}</td>
-            <td>`;
+            </tr>`;
             tbody.innerHTML += row;
         });
     }
 
-    function updateAllRankLists() {
+    function updateAllRankListsWithGap() {
         if (!latestData) return;
         const metrics = [
             { key: 'today_gift', dataKey: 'today_gift', unit: '朵' },
@@ -339,15 +402,29 @@
         ];
         metrics.forEach(metric => {
             const sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
+            const withGap = sorted.map((item, idx) => {
+                let gap = '';
+                if (idx === 0) {
+                    gap = '-';
+                } else {
+                    const prevValue = sorted[idx-1][metric.dataKey];
+                    const currValue = item[metric.dataKey];
+                    const diff = prevValue - currValue;
+                    gap = `-${diff.toFixed(0)} ${metric.unit}`;
+                }
+                return { ...item, gap };
+            });
             const rankUl = document.getElementById(`rank-list-${metric.key}`);
             if (rankUl) {
                 rankUl.innerHTML = '';
-                sorted.forEach((item, idx) => {
+                withGap.forEach((item, idx) => {
                     const li = document.createElement('li');
                     li.innerHTML = `
-                        <span class="rank-number">${idx+1}</span>
-                        <span class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</span>
-                        <span class="rank-value">${item[metric.dataKey]} ${metric.unit}</span>
+                        <div class="rank-number">${idx+1}</div>
+                        <div class="rank-color" style="background-color: ${getColorForName(item.name)}; width:24px; height:24px; border-radius:50%;"></div>
+                        <div class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</div>
+                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
+                        <div class="rank-gap">${item.gap}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -370,13 +447,14 @@
                 tbody.innerHTML = '';
                 sorted.forEach(item => {
                     const bgColor = getLightBgColor(item.name);
+                    const color = getColorForName(item.name);
                     tbody.innerHTML += `<tr style="background-color: ${bgColor};">
-                        <td style="font-weight: bold; color:${getColorForName(item.name)}">${item.name}</td>
+                        <td><div class="color-dot" style="background-color: ${color};" title="${item.name}"></div></td>
                         <td>${item.today_gift}</td>
                         <td>${item.today_users}</td>
                         <td>${item.avg}</td>
                         <td>${item.total_gift}</td>
-                    </tr>`;
+                    </td>`;
                 });
             });
         });
