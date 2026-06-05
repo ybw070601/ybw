@@ -5,14 +5,13 @@ import os
 import json
 import re
 from urllib.parse import quote
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-# 设置北京时区 (UTC+8)
-BEIJING_TZ = timezone(timedelta(hours=8))
-
+# 使用简单的北京时区字符串（不依赖 pytz）
 def beijing_now():
-    """返回当前北京时间（带时区信息）"""
-    return datetime.now(BEIJING_TZ)
+    """返回当前北京时间（naive datetime，无时区信息，但数值为北京时间）"""
+    # 获取 UTC 时间 + 8 小时
+    return datetime.utcnow() + timedelta(hours=8)
 
 # ==================== 配置区 ====================
 INPUT_FILE = "input.txt"
@@ -113,7 +112,7 @@ def update_history(current_data_list):
     history = load_history()
     now_str = beijing_now().strftime("%Y-%m-%d %H:%M:%S")
     history["timestamps"].append(now_str)
-    max_points = 48   # 保留最近48个点（24小时）
+    max_points = 48
     if len(history["timestamps"]) > max_points:
         history["timestamps"] = history["timestamps"][-max_points:]
         for name in history["series"]:
@@ -144,7 +143,7 @@ def update_history(current_data_list):
     save_history(history)
 
 def generate_compare_data(current_data_list, history):
-    """生成杨博文今天与昨天同一时刻的对比数据（基于北京时间）"""
+    """生成杨博文今天与昨天同一时刻的对比数据（基于北京时间 naive）"""
     yang = None
     for item in current_data_list:
         if item["name"] == "杨博文":
@@ -160,9 +159,7 @@ def generate_compare_data(current_data_list, history):
 
     now = beijing_now()
     yesterday = now - timedelta(days=1)
-    # 转换为 naive datetime 以便与字符串比较
-    yesterday_naive = yesterday.replace(tzinfo=None)
-    target_prefix = yesterday_naive.strftime("%Y-%m-%d %H:%M")
+    target_prefix = yesterday.strftime("%Y-%m-%d %H:%M")
 
     best_idx = None
     for idx, ts in enumerate(timestamps):
@@ -170,9 +167,12 @@ def generate_compare_data(current_data_list, history):
             best_idx = idx
             break
     if best_idx is None:
-        # 计算最小时间差
-        ts_dt_list = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S") for ts in timestamps]
-        best_idx = min(range(len(ts_dt_list)), key=lambda i: abs((ts_dt_list[i] - yesterday_naive).total_seconds()))
+        # 找时间差最小的点（两者都是 naive datetime，可以相减）
+        yesterday_naive = yesterday  # already naive
+        def time_diff(i):
+            ts_naive = datetime.strptime(timestamps[i], "%Y-%m-%d %H:%M:%S")
+            return abs((ts_naive - yesterday_naive).total_seconds())
+        best_idx = min(range(len(timestamps)), key=time_diff)
 
     yesterday_data = {
         "timestamp": timestamps[best_idx],
