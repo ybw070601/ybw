@@ -5,13 +5,18 @@ import os
 import json
 import re
 from urllib.parse import quote
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-# 使用简单的北京时区字符串（不依赖 pytz）
+# 北京时区 (UTC+8)
+BEIJING_TZ = timezone(timedelta(hours=8))
+
 def beijing_now():
-    """返回当前北京时间（naive datetime，无时区信息，但数值为北京时间）"""
-    # 获取 UTC 时间 + 8 小时
-    return datetime.utcnow() + timedelta(hours=8)
+    return datetime.now(BEIJING_TZ)
+
+def parse_beijing_time(ts_str):
+    """解析时间字符串为带北京时区的 datetime 对象"""
+    dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
+    return dt.replace(tzinfo=BEIJING_TZ)
 
 # ==================== 配置区 ====================
 INPUT_FILE = "input.txt"
@@ -112,7 +117,7 @@ def update_history(current_data_list):
     history = load_history()
     now_str = beijing_now().strftime("%Y-%m-%d %H:%M:%S")
     history["timestamps"].append(now_str)
-    max_points = 48
+    max_points = 48   # 保留最近48个点（24小时）
     if len(history["timestamps"]) > max_points:
         history["timestamps"] = history["timestamps"][-max_points:]
         for name in history["series"]:
@@ -143,7 +148,7 @@ def update_history(current_data_list):
     save_history(history)
 
 def generate_compare_data(current_data_list, history):
-    """生成杨博文今天与昨天同一时刻的对比数据（基于北京时间 naive）"""
+    """生成杨博文今天与昨天同一时刻的对比数据（基于北京时间）"""
     yang = None
     for item in current_data_list:
         if item["name"] == "杨博文":
@@ -167,18 +172,18 @@ def generate_compare_data(current_data_list, history):
             best_idx = idx
             break
     if best_idx is None:
-        # 找时间差最小的点（两者都是 naive datetime，可以相减）
-        yesterday_naive = yesterday  # already naive
-        def time_diff(i):
-            ts_naive = datetime.strptime(timestamps[i], "%Y-%m-%d %H:%M:%S")
-            return abs((ts_naive - yesterday_naive).total_seconds())
-        best_idx = min(range(len(timestamps)), key=time_diff)
+        # 转换为带时区的 datetime 进行比较
+        parsed_times = [parse_beijing_time(ts) for ts in timestamps]
+        best_idx = min(range(len(timestamps)), key=lambda i: abs((parsed_times[i] - yesterday).total_seconds()))
+
+    def safe_get(lst, idx):
+        return lst[idx] if idx < len(lst) else 0
 
     yesterday_data = {
         "timestamp": timestamps[best_idx],
-        "today_gift": yang_history.get("today_gift", [])[best_idx] if best_idx < len(yang_history.get("today_gift", [])) else 0,
-        "today_users": yang_history.get("today_users", [])[best_idx] if best_idx < len(yang_history.get("today_users", [])) else 0,
-        "avg": yang_history.get("avg", [])[best_idx] if best_idx < len(yang_history.get("avg", [])) else 0
+        "today_gift": safe_get(yang_history.get("today_gift", []), best_idx),
+        "today_users": safe_get(yang_history.get("today_users", []), best_idx),
+        "avg": safe_get(yang_history.get("avg", []), best_idx)
     }
 
     compare = {
@@ -188,12 +193,7 @@ def generate_compare_data(current_data_list, history):
             "today_users": yang["today_users"],
             "avg": yang["avg"]
         },
-        "yesterday": {
-            "today_gift": yesterday_data["today_gift"],
-            "today_users": yesterday_data["today_users"],
-            "avg": yesterday_data["avg"]
-        },
-        "yesterday_timestamp": yesterday_data["timestamp"]
+        "yesterday": yesterday_data
     }
     return compare
 
