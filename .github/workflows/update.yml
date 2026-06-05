@@ -1,8 +1,15 @@
-name: 每30分钟抓取送花数据
+name: 每30分钟抓取送花数据（北京时间整点）
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    # 北京时间每小时的00分和30分对应 UTC 16:00/16:30, 17:00/17:30 ...
+    # 为了在北京时间 0:00 触发，UTC 时间应该是前一天的 16:00
+    # 这里使用 '*/30 * * * *' 表示每30分钟运行一次，不严格对齐整点，但频率保证每半小时一次。
+    # 若需要严格对齐北京时间整点，请使用下面的表达式（UTC 时间每小时的00分和30分）：
+    # - cron: '0,30 * * * *'
+    # 由于 GitHub Actions 使用 UTC，实际执行时间比北京时间晚8小时，但仍然是每30分钟一次。
+    # 用户可在页面上看到数据更新时间是北京时间。
+    - cron: '0,30 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -15,15 +22,18 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
-      - run: pip install requests
-      - run: python flower_crawler.py
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run crawler
+        run: python flower_crawler.py
         env:
           BAIDU_COOKIE: ${{ secrets.BAIDU_COOKIE }}
-      - run: |
+      - name: Commit and push changes
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git config --global http.postBuffer 524288000
-          git add docs/data.json docs/history.json docs/index.html
+          git add docs/data.json docs/history.json docs/compare_yangbowen.json docs/index.html
           git diff --quiet && git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
           git push origin main
