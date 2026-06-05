@@ -12,16 +12,13 @@ INPUT_FILE = "input.txt"
 HISTORY_FILE = "docs/history.json"
 DATA_FILE = "docs/data.json"
 
-# 静态 profile（从您提供的 curl 中提取）
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
-# 从环境变量读取 Cookie（GitHub Secrets 中配置）
 RAW_COOKIE = os.environ.get("BAIDU_COOKIE", "")
 if not RAW_COOKIE:
     print("警告: 未设置 BAIDU_COOKIE 环境变量，请确保在 GitHub Secrets 中配置。")
 
 def clean_cookie(c):
-    # 只保留 ASCII 可打印字符
     return re.sub(r'[^\x20-\x7E]+', '', c).strip()
 
 COOKIE_STRING = clean_cookie(RAW_COOKIE)
@@ -53,7 +50,7 @@ def fetch_data(baikeid, name):
     url_trend = "https://figure.baidu.com/api/land/interact/getTrend"
     url_equity = "https://figure.baidu.com/api/land/interact/getEquity"
 
-    # 1. 获取今日数据
+    # 今日数据
     try:
         headers = build_headers(baikeid, name)
         resp = session.post(url_trend, data=f"baikeid={baikeid}", headers=headers, timeout=10)
@@ -71,7 +68,7 @@ def fetch_data(baikeid, name):
     except Exception as e:
         result['status'] = f"趋势异常: {str(e)}"
 
-    # 2. 获取累计数据
+    # 累计数据
     try:
         headers = build_headers(baikeid, name)
         encoded_name = quote(name, safe='')
@@ -108,11 +105,9 @@ def update_history(current_data_list):
     history = load_history()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     history["timestamps"].append(now_str)
-    # 限制最多保留 48 个点（24小时，每30分钟一个点）
     max_points = 48
     if len(history["timestamps"]) > max_points:
         history["timestamps"] = history["timestamps"][-max_points:]
-        # 同时裁剪每个系列的数据
         for name in history["series"]:
             if len(history["series"][name]["today_gift"]) > max_points:
                 history["series"][name]["today_gift"] = history["series"][name]["today_gift"][-max_points:]
@@ -122,13 +117,9 @@ def update_history(current_data_list):
     for item in current_data_list:
         name = item["name"]
         if name not in history["series"]:
-            history["series"][name] = {
-                "today_gift": [],
-                "total_gift": []
-            }
+            history["series"][name] = {"today_gift": [], "total_gift": []}
         history["series"][name]["today_gift"].append(item["today_gift"])
         history["series"][name]["total_gift"].append(item["total_gift"])
-        # 保持长度一致
         if len(history["series"][name]["today_gift"]) > max_points:
             history["series"][name]["today_gift"] = history["series"][name]["today_gift"][-max_points:]
         if len(history["series"][name]["total_gift"]) > max_points:
@@ -156,12 +147,10 @@ def main():
         results.append(fetch_data(bid, name))
         time.sleep(random.uniform(1.5, 3))
 
-    # 保存最新快照
     os.makedirs("docs", exist_ok=True)
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
-    # 更新历史数据
     update_history(results)
     print("已更新 docs/data.json 和 docs/history.json")
 
