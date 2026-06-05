@@ -54,37 +54,29 @@
             border-bottom: 1px solid #edf2f7;
             font-size: 0.9rem;
             gap: 12px;
+            flex-wrap: nowrap;
         }
         .rank-number {
             font-weight: bold;
             color: #f59c42;
-            width: 40px;
+            width: 50px;
+            flex-shrink: 0;
+            text-align: center;
         }
         .rank-color {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            display: inline-block;
             flex-shrink: 0;
+            cursor: help;
         }
-        .rank-name {
-            flex: 1.5;
-            font-weight: 500;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .rank-value {
+        .rank-value-gap {
+            flex: 1;
             font-weight: 600;
             color: #2c3e50;
-            width: 80px;
-            text-align: right;
-        }
-        .rank-gap {
-            width: 90px;
-            text-align: right;
-            font-size: 0.8rem;
-            color: #6c757d;
+            text-align: left;
+            white-space: nowrap;
+            overflow-x: auto;
         }
         .rank-right {
             flex: 2.5;
@@ -125,11 +117,13 @@
             display: inline-block;
             vertical-align: middle;
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            cursor: help;
         }
         @media (max-width: 900px) {
             .rank-card { flex-direction: column; }
             .rank-left { border-right: none; border-bottom: 1px solid #e9ecef; }
             .rank-right .chart-container { height: 260px; }
+            .rank-value-gap { white-space: normal; word-break: keep-all; }
         }
     </style>
 </head>
@@ -137,13 +131,11 @@
 <div class="container">
     <h2>🌸 百度送花数据看板</h2>
 
-    <!-- 杨博文对比表格 -->
     <div class="compare-box" id="compareContainer">
         <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
         <div id="compareTable">加载中...</div>
     </div>
 
-    <!-- 四个动态卡片将插入此处 -->
     <div id="cardsContainer"></div>
 
     <h3>📋 详细数据表 (点击表头排序)</h3>
@@ -158,7 +150,6 @@
     <div class="footer" id="updateTime">等待数据...</div>
 </div>
 
-<!-- 水印 -->
 <div id="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; background-repeat: repeat; opacity: 0.18;"></div>
 
 <script>
@@ -167,7 +158,6 @@
     let compareData = null;
     let charts = {};
 
-    // 颜色映射
     const colorMap = {
         "张桂源": "#F9E511",
         "张函瑞": "#779649",
@@ -192,7 +182,7 @@
         return hex + '66';
     }
 
-    // 水印生成
+    // 水印
     (function() {
         const watermarkText = "YBW-裱你咋滴";
         const canvas = document.createElement('canvas');
@@ -210,7 +200,6 @@
         watermarkDiv.style.backgroundSize = '220px 140px';
     })();
 
-    // 加载对比数据
     async function loadCompare() {
         try {
             const resp = await fetch('compare_yangbowen.json?_=' + Date.now());
@@ -240,7 +229,6 @@
         document.getElementById('compareTable').innerHTML = html;
     }
 
-    // 加载历史数据
     async function loadHistory() {
         try {
             const resp = await fetch('history.json?_=' + Date.now());
@@ -253,7 +241,6 @@
         renderAllCards();
     }
 
-    // 渲染四个卡片（左侧排名+差距，右侧折线图）
     function renderAllCards() {
         if (!historyData || !historyData.timestamps || historyData.timestamps.length === 0) {
             document.getElementById('cardsContainer').innerHTML = '<p>暂无历史数据，等待自动抓取...</p>';
@@ -276,20 +263,6 @@
             if (latestData) {
                 sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
             }
-            // 计算与上一名的差距
-            const withGap = sorted.map((item, idx) => {
-                let gap = '';
-                if (idx === 0) {
-                    gap = '-';
-                } else {
-                    const prevValue = sorted[idx-1][metric.dataKey];
-                    const currValue = item[metric.dataKey];
-                    const diff = prevValue - currValue;
-                    gap = `-${diff.toFixed(0)} ${metric.unit}`;
-                }
-                return { ...item, gap };
-            });
-
             const datasets = [];
             names.forEach(name => {
                 const points = series[name]?.[metric.key] || [];
@@ -323,16 +296,23 @@
             container.appendChild(card);
 
             const rankUl = document.getElementById(`rank-list-${metric.key}`);
-            if (rankUl && withGap.length) {
+            if (rankUl && sorted.length) {
                 rankUl.innerHTML = '';
-                withGap.forEach((item, idx) => {
+                sorted.forEach((item, idx) => {
+                    const prevValue = idx > 0 ? sorted[idx-1][metric.dataKey] : null;
+                    let gapText = '';
+                    if (idx === 0) {
+                        gapText = '';
+                    } else {
+                        const diff = prevValue - item[metric.dataKey];
+                        gapText = ` -${diff.toFixed(0)} ${metric.unit}`;
+                    }
+                    const valueWithGap = `${item[metric.dataKey]} ${metric.unit}${gapText}`;
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <div class="rank-number">${idx+1}</div>
-                        <div class="rank-color" style="background-color: ${getColorForName(item.name)}; width:24px; height:24px; border-radius:50%;"></div>
-                        <div class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</div>
-                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
-                        <div class="rank-gap">${item.gap}</div>
+                        <div class="rank-color" style="background-color: ${getColorForName(item.name)};" title="${item.name}"></div>
+                        <div class="rank-value-gap">${valueWithGap}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -359,7 +339,6 @@
         });
     }
 
-    // 加载最新数据并更新表格和排名列表
     async function loadLatest() {
         try {
             const resp = await fetch('data.json?_=' + Date.now());
@@ -402,29 +381,24 @@
         ];
         metrics.forEach(metric => {
             const sorted = [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]);
-            const withGap = sorted.map((item, idx) => {
-                let gap = '';
-                if (idx === 0) {
-                    gap = '-';
-                } else {
-                    const prevValue = sorted[idx-1][metric.dataKey];
-                    const currValue = item[metric.dataKey];
-                    const diff = prevValue - currValue;
-                    gap = `-${diff.toFixed(0)} ${metric.unit}`;
-                }
-                return { ...item, gap };
-            });
             const rankUl = document.getElementById(`rank-list-${metric.key}`);
             if (rankUl) {
                 rankUl.innerHTML = '';
-                withGap.forEach((item, idx) => {
+                sorted.forEach((item, idx) => {
+                    const prevValue = idx > 0 ? sorted[idx-1][metric.dataKey] : null;
+                    let gapText = '';
+                    if (idx === 0) {
+                        gapText = '';
+                    } else {
+                        const diff = prevValue - item[metric.dataKey];
+                        gapText = ` -${diff.toFixed(0)} ${metric.unit}`;
+                    }
+                    const valueWithGap = `${item[metric.dataKey]} ${metric.unit}${gapText}`;
                     const li = document.createElement('li');
                     li.innerHTML = `
                         <div class="rank-number">${idx+1}</div>
-                        <div class="rank-color" style="background-color: ${getColorForName(item.name)}; width:24px; height:24px; border-radius:50%;"></div>
-                        <div class="rank-name" style="color:${getColorForName(item.name)}">${item.name}</div>
-                        <div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div>
-                        <div class="rank-gap">${item.gap}</div>
+                        <div class="rank-color" style="background-color: ${getColorForName(item.name)};" title="${item.name}"></div>
+                        <div class="rank-value-gap">${valueWithGap}</div>
                     `;
                     rankUl.appendChild(li);
                 });
@@ -454,7 +428,7 @@
                         <td>${item.today_users}</td>
                         <td>${item.avg}</td>
                         <td>${item.total_gift}</td>
-                    </td>`;
+                    </table>`;
                 });
             });
         });
