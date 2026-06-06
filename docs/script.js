@@ -1,15 +1,15 @@
 // ==================== 百度送花相关代码 ====================
 let latestData = null, historyData = null, compareData = null, charts = {};
-const colorMap = {"张桂源":"#F9E511","张函瑞":"#779649","王橹杰":"#4ab7cc","左奇函":"#10319f","左齐函":"#10319f","陈奕恒":"#C1A1CA","杨博文":"#F4A9AA","陈浚明":"#E60012"};
+const colorMap = {"张桂源":"#F9E511","张函瑞":"#779649","王橹杰":"#4ab7cc","左奇函":"#10319f","左齐函":"#10319f","陈奕恒":"#9b59b6","杨博文":"#F4A9AA","陈浚明":"#E60012"};
 function getColorForName(n){return colorMap[n]||`hsl(${Math.abs(n.length*37)%360},70%,55%)`;}
 function getLightBgColor(n){let h=getColorForName(n);if(h.startsWith('#')){let r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},0.4)`;}return h+'66';}
 function getNextUpdateTime(){let n=new Date(),m=n.getMinutes();let nm=m<30?30:60;let nt=new Date(n);nt.setMinutes(nm,0,0);return nt.toLocaleString('zh-CN',{hour12:false,timeZone:'Asia/Shanghai'});}
 function updateNextUpdateDisplay(){document.getElementById('nextUpdate').innerHTML=`⏰ 预计下次更新: ${getNextUpdateTime()}`;}
-// 水印更明显
+// 水印
 (function(){let wt="YBW-裱你咋滴";let c=document.createElement('canvas');c.width=300;c.height=180;let ctx=c.getContext('2d');ctx.font="bold 28px 'Segoe UI', 'Microsoft YaHei'";ctx.fillStyle="rgba(100,100,100,0.5)";ctx.translate(40,120);ctx.rotate(-Math.PI/9);ctx.fillText(wt,0,0);let wd=document.getElementById('watermark');wd.style.backgroundImage=`url(${c.toDataURL()})`;wd.style.backgroundRepeat='repeat';wd.style.backgroundSize='320px 200px';})();
 
 async function loadCompare(){try{let r=await fetch('compare_yangbowen.json?_='+Date.now());if(!r.ok)throw new Error();compareData=await r.json();renderCompareTable();}catch(e){document.getElementById('compareTable').innerHTML='<p style="color:red;">暂无对比数据</p>';}}
-function renderCompareTable(){if(!compareData)return;let t=compareData.today,y=compareData.yesterday;let dg=t.today_gift-y.today_gift,du=t.today_users-y.today_users,da=t.avg-y.avg;document.getElementById('compareTable').innerHTML=`<table class="compare-table"><thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead><tbody><tr><td>今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr><tr><td>今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr><tr><td>人均(朵/人)</td><td>${t.avg}</td><td>${y.avg}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr></tbody></table>`;}
+function renderCompareTable(){if(!compareData)return;let t=compareData.today,y=compareData.yesterday;let dg=t.today_gift-y.today_gift,du=t.today_users-y.today_users,da=t.avg-y.avg;document.getElementById('compareTable').innerHTML=`<table class="compare-table"><thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead><tbody><tr><td>今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr><tr><td>今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr><tr><td>人均(朵/人)</td><td>${t.avg}</td><td>${y.avg}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr></tbody>}`;}
 async function loadHistory(){try{let r=await fetch('history.json?_='+Date.now());if(!r.ok)throw new Error();historyData=await r.json();}catch(e){historyData={timestamps:[],series:{}};}renderAllCards();}
 
 function getChartDateFromTimestamps(timestamps){
@@ -252,7 +252,7 @@ async function loadXunyiLatest(){
                     let diff = yang.total_points - yesterdayTotal;
                     let todayTime = full.timestamps[latestIdx];
                     let yesterdayTime = full.timestamps[yesterdayIdx];
-                    document.getElementById('xunyiCompareTable').innerHTML = `<table class="compare-table"><thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead><tbody><tr><td>获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>}`;
+                    document.getElementById('xunyiCompareTable').innerHTML = `<table class="compare-table"><thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead><tbody><tr><td>获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody></table>`;
                 } else {
                     document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无昨日同时段数据</p>';
                 }
