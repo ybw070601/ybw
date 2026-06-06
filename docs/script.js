@@ -30,9 +30,9 @@ function updateNextUpdateDisplay(){
 
 async function loadCompare(){try{let r=await fetch('compare_yangbowen.json?_='+Date.now());if(!r.ok)throw new Error();compareData=await r.json();renderCompareTable();}catch(e){document.getElementById('compareTable').innerHTML='<p style="color:red;">暂无对比数据</p>';}}
 function renderCompareTable(){if(!compareData)return;let t=compareData.today,y=compareData.yesterday;let dg=t.today_gift-y.today_gift,du=t.today_users-y.today_users,da=t.avg-y.avg;document.getElementById('compareTable').innerHTML=`<table class="compare-table"><thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead><tbody><tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
-    <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
-    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
-    </tbody>}</table>`;}
+    <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}<\/td></td>
+    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}<\/td><td>${y.avg.toFixed(2)}<\/td><td>${da.toFixed(2)}<\/td></tr>
+    </tbody>}<\/table>`;}
 async function loadHistory(){try{let r=await fetch('history.json?_='+Date.now());if(!r.ok)throw new Error();historyData=await r.json();}catch(e){historyData={timestamps:[],series:{}};}renderAllCards();}
 
 function getChartDateFromTimestamps(timestamps){
@@ -435,12 +435,16 @@ function renderXunyiTable(data){
 function attachXunyiSortEvents(){
     let headers = document.querySelectorAll('#xunyiTableHeader th');
     headers.forEach(th => {
+        // 移除旧事件避免重复绑定
         th.removeEventListener('click', xunyiSortHandler);
         th.addEventListener('click', xunyiSortHandler);
     });
 }
 function xunyiSortHandler(e){
-    let field = e.target.getAttribute('data-sort');
+    // 确保获取到 th 元素（可能点击的是内部文本或图标）
+    let th = e.target.closest('th');
+    if(!th) return;
+    let field = th.getAttribute('data-sort');
     if(!field) return;
     let sorted;
     if(field === '标识') {
@@ -485,6 +489,8 @@ window.onload = async()=>{
     initTabs();
     await loadXunyiHistory();
     await loadXunyiLatest();
+    // 绑定寻艺表头排序事件（初始加载后绑定一次即可，后续重绘不会影响表头）
+    attachXunyiSortEvents();
     setInterval(()=>{
         if(document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
