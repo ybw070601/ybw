@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.10'
       - run: pip install requests
-      - run: python flower_crawler.py
+      - run: python main.py          # 改为 main.py
         env:
           BAIDU_COOKIE: ${{ secrets.BAIDU_COOKIE }}
       - run: |
