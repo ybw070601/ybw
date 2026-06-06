@@ -2,7 +2,7 @@ name: 每30分钟抓取送花数据
 
 on:
   schedule:
-    - cron: '0,30 * * * *'
+    - cron: '0,31 * * * *'
   workflow_dispatch:
 
 jobs:
