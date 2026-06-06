@@ -16,13 +16,14 @@ def parse_beijing_time(ts_str):
     dt = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
     return dt.replace(tzinfo=BEIJING_TZ)
 
-# ==================== 配置 ====================
-INPUT_FILE = "input.txt"
-HISTORY_FILE = "docs/history.json"                # 百度送花历史
-XUNYI_HISTORY_FILE = "docs/xunyi_history.json"    # 寻艺历史
-DATA_FILE = "docs/data.json"                      # 百度最新快照
-COMPARE_FILE = "docs/compare_yangbowen.json"      # 百度对比
-XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"  # 寻艺杨博文对比
+# ==================== 配置文件 ====================
+BAIDU_INPUT_FILE = "input.txt"                # 百度送花: baikeid,名字
+XUNYI_MAPPING_FILE = "xunyi_mapping.txt"      # 寻艺映射: 名字,person_id
+HISTORY_FILE = "docs/history.json"
+XUNYI_HISTORY_FILE = "docs/xunyi_history.json"
+DATA_FILE = "docs/data.json"
+COMPARE_FILE = "docs/compare_yangbowen.json"
+XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -33,6 +34,36 @@ if not RAW_COOKIE:
 def clean_cookie(c):
     return re.sub(r'[^\x20-\x7E]+', '', c).strip()
 COOKIE_STRING = clean_cookie(RAW_COOKIE)
+
+# ==================== 读取百度送花人物 ====================
+def load_baidu_tasks():
+    tasks = []
+    if not os.path.exists(BAIDU_INPUT_FILE):
+        print(f"错误: 找不到 {BAIDU_INPUT_FILE}")
+        return []
+    with open(BAIDU_INPUT_FILE, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or ',' not in line:
+                continue
+            bid, name = line.split(',', 1)
+            tasks.append((bid.strip(), name.strip()))
+    return tasks
+
+# ==================== 读取寻艺映射 ====================
+def load_xunyi_mapping():
+    mapping = {}
+    if not os.path.exists(XUNYI_MAPPING_FILE):
+        print(f"错误: 找不到 {XUNYI_MAPPING_FILE}")
+        return {}
+    with open(XUNYI_MAPPING_FILE, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line or ',' not in line:
+                continue
+            name, pid = line.split(',', 1)
+            mapping[name.strip()] = int(pid.strip())
+    return mapping
 
 # ==================== 百度送花接口 ====================
 def build_headers(baikeid, name):
@@ -99,19 +130,9 @@ def fetch_baidu_data(baikeid, name):
     return result
 
 # ==================== 寻艺接口 ====================
-XUNYI_MAP = {
-    "张桂源": 198330,
-    "张函瑞": 198334,
-    "王橹杰": 198331,
-    "左奇函": 198333,
-    "陈奕恒": 198335,
-    "杨博文": 198332,
-    "陈浚明": 198336
-}
-
-def fetch_xunyi_data():
+def fetch_xunyi_data(mapping):
     results = []
-    for name, pid in XUNYI_MAP.items():
+    for name, pid in mapping.items():
         url = f"https://api.xunyee.cn/xunyee/vcuser_person/fans_check?person={pid}"
         try:
             headers = {
@@ -251,73 +272,60 @@ def generate_xunyi_compare(current_list, history):
 
 # ==================== main ====================
 def main():
-    # 读取input.txt
-    tasks = []
-    if not os.path.exists(INPUT_FILE):
-        print("错误: 找不到 input.txt")
-        return
-    with open(INPUT_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or ',' not in line: continue
-            bid, name = line.split(',', 1)
-            tasks.append((bid.strip(), name.strip()))
-    print(f"共 {len(tasks)} 个任务")
+    # 百度送花
+    baidu_tasks = load_baidu_tasks()
+    if not baidu_tasks:
+        print("没有百度送花任务，跳过")
+    else:
+        print(f"共 {len(baidu_tasks)} 个百度送花任务")
+        baidu_results = []
+        for bid, name in baidu_tasks:
+            print(f"[百度] 抓取: {name}")
+            baidu_results.append(fetch_baidu_data(bid, name))
+            time.sleep(random.uniform(1, 2))
+        with open(DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(baidu_results, f, ensure_ascii=False, indent=2)
+        baidu_series = {}
+        for item in baidu_results:
+            baidu_series[item["name"]] = {
+                "today_gift": item["today_gift"],
+                "today_users": item["today_users"],
+                "avg": item["avg"],
+                "total_gift": item["total_gift"]
+            }
+        update_history_general(HISTORY_FILE, "series", baidu_series, max_points=144)
+        baidu_history = load_history(HISTORY_FILE, {"timestamps": [], "series": {}})
+        baidu_compare = generate_baidu_compare(baidu_results, baidu_history)
+        if baidu_compare:
+            with open(COMPARE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(baidu_compare, f, ensure_ascii=False, indent=2)
 
-    # 百度送花数据
-    baidu_results = []
-    for bid, name in tasks:
-        print(f"[百度] 抓取: {name}")
-        baidu_results.append(fetch_baidu_data(bid, name))
-        time.sleep(random.uniform(1, 2))
-
-    # 寻艺数据
-    xunyi_results = fetch_xunyi_data()
-    for item in xunyi_results:
-        print(f"[寻艺] {item['name']} 总获赞: {item.get('total_points',0)}")
-
-    # 保存百度最新快照
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(baidu_results, f, ensure_ascii=False, indent=2)
-
-    # 更新百度历史
-    baidu_series = {}
-    for item in baidu_results:
-        baidu_series[item["name"]] = {
-            "today_gift": item["today_gift"],
-            "today_users": item["today_users"],
-            "avg": item["avg"],
-            "total_gift": item["total_gift"]
-        }
-    update_history_general(HISTORY_FILE, "series", baidu_series, max_points=144)
-
-    # 更新寻艺历史
-    xunyi_series = {}
-    for item in xunyi_results:
-        xunyi_series[item["name"]] = {
-            "total_points": item.get("total_points", 0),
-            "check1": item.get("check1", 0),
-            "check2": item.get("check2", 0),
-            "check3": item.get("check3", 0),
-            "percent1": item.get("percent1", 0),
-            "percent2": item.get("percent2", 0),
-            "percent3": item.get("percent3", 0)
-        }
-    update_history_general(XUNYI_HISTORY_FILE, "series", xunyi_series, max_points=144)
-
-    # 杨博文对比（百度）
-    baidu_history = load_history(HISTORY_FILE, {"timestamps": [], "series": {}})
-    baidu_compare = generate_baidu_compare(baidu_results, baidu_history)
-    if baidu_compare:
-        with open(COMPARE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(baidu_compare, f, ensure_ascii=False, indent=2)
-
-    # 杨博文对比（寻艺）
-    xunyi_history = load_history(XUNYI_HISTORY_FILE, {"timestamps": [], "series": {}})
-    xunyi_compare = generate_xunyi_compare(xunyi_results, xunyi_history)
-    if xunyi_compare:
-        with open(XUNYI_COMPARE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(xunyi_compare, f, ensure_ascii=False, indent=2)
+    # 寻艺
+    xunyi_mapping = load_xunyi_mapping()
+    if not xunyi_mapping:
+        print("没有寻艺映射，跳过")
+    else:
+        print(f"共 {len(xunyi_mapping)} 个寻艺人物")
+        xunyi_results = fetch_xunyi_data(xunyi_mapping)
+        for item in xunyi_results:
+            print(f"[寻艺] {item['name']} 总获赞: {item.get('total_points',0)}")
+        xunyi_series = {}
+        for item in xunyi_results:
+            xunyi_series[item["name"]] = {
+                "total_points": item.get("total_points", 0),
+                "check1": item.get("check1", 0),
+                "check2": item.get("check2", 0),
+                "check3": item.get("check3", 0),
+                "percent1": item.get("percent1", 0),
+                "percent2": item.get("percent2", 0),
+                "percent3": item.get("percent3", 0)
+            }
+        update_history_general(XUNYI_HISTORY_FILE, "series", xunyi_series, max_points=144)
+        xunyi_history = load_history(XUNYI_HISTORY_FILE, {"timestamps": [], "series": {}})
+        xunyi_compare = generate_xunyi_compare(xunyi_results, xunyi_history)
+        if xunyi_compare:
+            with open(XUNYI_COMPARE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(xunyi_compare, f, ensure_ascii=False, indent=2)
 
     print("所有数据更新完成")
 
