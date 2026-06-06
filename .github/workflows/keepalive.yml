@@ -1,0 +1,12 @@
+name: 保活唤醒
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'   # 每周一中午12点 UTC（北京时间20点）运行一次
+  workflow_dispatch:
+
+jobs:
+  keep:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "保持仓库活跃，防止定时任务被暂停"
