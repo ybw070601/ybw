@@ -5,7 +5,7 @@ const colorMap = {"张桂源":"#F9E511","张函瑞":"#779649","王橹杰":"#4ab7
 function getColorForName(n){return colorMap[n]||`hsl(${Math.abs(n.length*37)%360},70%,55%)`;}
 function getLightBgColor(n){let h=getColorForName(n);if(h.startsWith('#')){let r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},0.4)`;}return h+'66';}
 
-// 根据数据文件的最新时间戳计算预计下次更新时间
+// 根据数据文件的最新时间戳计算预计下次更新时间（北京时间的下一个10分钟倍数）
 function getNextUpdateTimeFromLast(lastTimeStr) {
     let lastDate = new Date(lastTimeStr.replace(' ', 'T') + '+08:00');
     let minutes = lastDate.getMinutes();
@@ -25,13 +25,13 @@ function updateNextUpdateDisplay(){
     }
 }
 
-// 水印
+// 水印（更明显）
 (function(){let wt="YBW-裱你咋滴";let c=document.createElement('canvas');c.width=300;c.height=180;let ctx=c.getContext('2d');ctx.font="bold 28px 'Segoe UI', 'Microsoft YaHei'";ctx.fillStyle="rgba(100,100,100,0.5)";ctx.translate(40,120);ctx.rotate(-Math.PI/9);ctx.fillText(wt,0,0);let wd=document.getElementById('watermark');wd.style.backgroundImage=`url(${c.toDataURL()})`;wd.style.backgroundRepeat='repeat';wd.style.backgroundSize='320px 200px';})();
 
 async function loadCompare(){try{let r=await fetch('compare_yangbowen.json?_='+Date.now());if(!r.ok)throw new Error();compareData=await r.json();renderCompareTable();}catch(e){document.getElementById('compareTable').innerHTML='<p style="color:red;">暂无对比数据</p>';}}
 function renderCompareTable(){if(!compareData)return;let t=compareData.today,y=compareData.yesterday;let dg=t.today_gift-y.today_gift,du=t.today_users-y.today_users,da=t.avg-y.avg;document.getElementById('compareTable').innerHTML=`<table class="compare-table"><thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead><tbody><tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
     <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
-    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg}</td><td>${y.avg}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
+    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
     </tbody>}</table>`;}
 async function loadHistory(){try{let r=await fetch('history.json?_='+Date.now());if(!r.ok)throw new Error();historyData=await r.json();}catch(e){historyData={timestamps:[],series:{}};}renderAllCards();}
 
@@ -44,10 +44,12 @@ function getChartDateFromTimestamps(timestamps){
     return datePart;
 }
 
+// 生成 tooltip 配置，根据是否为浮点指标决定差值小数位数
 function createTooltipWithDiff(unit, isFloat = false){
     return {
         mode: 'index',
         intersect: false,
+        itemSort: (a, b) => b.parsed.y - a.parsed.y,  // 按当前点数值从高到低排序
         callbacks: {
             label: function(context) {
                 let dataset = context.dataset;
@@ -59,7 +61,7 @@ function createTooltipWithDiff(unit, isFloat = false){
                     let prevValue = dataset.data[dataIndex-1];
                     let diff = value - prevValue;
                     let sign = diff >=0 ? '+' : '';
-                    let diffFormatted = diff.toFixed(2);
+                    let diffFormatted = isFloat ? diff.toFixed(2) : Math.round(diff);
                     diffText = ` (${sign}${diffFormatted} ${unit})`;
                 }
                 let valueFormatted = isFloat ? value.toFixed(2) : value;
@@ -97,7 +99,7 @@ function renderAllCards(){
                 borderColor: getColorForName(name),
                 backgroundColor: 'transparent',
                 borderWidth: 2.5,
-                pointRadius: 0,
+                pointRadius: 0,          // 隐藏数据点小圆圈
                 pointHoverRadius: 4,
                 tension: 0.2,
                 fill: false
@@ -121,7 +123,7 @@ function renderAllCards(){
             rankUl.innerHTML='';
             sorted.forEach((item,idx)=>{
                 let prev=idx>0?sorted[idx-1][metric.dataKey]:null;
-                let gap=idx===0?'—':`-${(prev-item[metric.dataKey]).toFixed(2)} ${metric.unit}`;
+                let gap=idx===0?'—':`-${(prev-item[metric.dataKey]).toFixed(metric.isFloat?2:0)} ${metric.unit}`;
                 let li=document.createElement('li');
                 li.innerHTML=`<div class="rank-number">${idx+1}</div><div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div><div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div><div class="rank-gap">${gap}</div>`;
                 rankUl.appendChild(li);
@@ -172,7 +174,7 @@ async function loadLatest(){
         latestData=await r.json();
         // 保存原始顺序
         baiduOriginalOrder = latestData.map(item => item.name);
-        // 获取最后更新时间
+        // 获取最后更新时间（从history.json的最后时间戳）
         let historyResp = await fetch('history.json?_='+Date.now());
         if(historyResp.ok){
             let hist = await historyResp.json();
@@ -200,16 +202,16 @@ function updateTable(){
     tb.innerHTML='';
     latestData.forEach(item=>{
         let bg=getLightBgColor(item.name), c=getColorForName(item.name);
-        tb.innerHTML+=`<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg}</td><td>${item.total_gift}</td></tr>`;
+        tb.innerHTML+=`<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg.toFixed(2)}</td><td>${item.total_gift}</td></tr>`;
     });
 }
 function updateAllRankLists(){
     if(!latestData) return;
     let metrics=[
-        {key:'today_gift',dataKey:'today_gift',unit:'朵'},
-        {key:'today_users',dataKey:'today_users',unit:'人'},
-        {key:'avg',dataKey:'avg',unit:'朵/人'},
-        {key:'total_gift',dataKey:'total_gift',unit:'朵'}
+        {key:'today_gift',dataKey:'today_gift',unit:'朵',isFloat:false},
+        {key:'today_users',dataKey:'today_users',unit:'人',isFloat:false},
+        {key:'avg',dataKey:'avg',unit:'朵/人',isFloat:true},
+        {key:'total_gift',dataKey:'total_gift',unit:'朵',isFloat:false}
     ];
     metrics.forEach(metric=>{
         let sorted=[...latestData].sort((a,b)=>b[metric.dataKey]-a[metric.dataKey]);
@@ -218,7 +220,7 @@ function updateAllRankLists(){
             rankUl.innerHTML='';
             sorted.forEach((item,idx)=>{
                 let prev=idx>0?sorted[idx-1][metric.dataKey]:null;
-                let gap=idx===0?'—':`-${(prev-item[metric.dataKey]).toFixed(2)} ${metric.unit}`;
+                let gap=idx===0?'—':`-${(prev-item[metric.dataKey]).toFixed(metric.isFloat?2:0)} ${metric.unit}`;
                 let li=document.createElement('li');
                 li.innerHTML=`<div class="rank-number">${idx+1}</div><div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div><div class="rank-value">${item[metric.dataKey]} ${metric.unit}</div><div class="rank-gap">${gap}</div>`;
                 rankUl.appendChild(li);
@@ -226,7 +228,7 @@ function updateAllRankLists(){
         }
     });
 }
-// 百度表格排序：点击“标识”恢复初始顺序；其他列降序（数值从大到小）
+// 百度表格排序：点击“标识”恢复原始顺序；其他列降序
 function setupTableSort(){
     let ths = document.querySelectorAll('#dataTable th');
     ths.forEach(th => {
@@ -236,7 +238,7 @@ function setupTableSort(){
             let sorted;
             if(key === 'name') {
                 // 恢复原始顺序
-                sorted = [...baiduOriginalOrder.map(name => latestData.find(item => item.name === name))];
+                sorted = baiduOriginalOrder.map(name => latestData.find(item => item.name === name));
             } else {
                 sorted = [...latestData].sort((a,b) => b[key] - a[key]);
             }
@@ -244,7 +246,7 @@ function setupTableSort(){
             tb.innerHTML = '';
             sorted.forEach(item => {
                 let bg = getLightBgColor(item.name), c = getColorForName(item.name);
-                tb.innerHTML += `<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg}</td><td>${item.total_gift}</td></tr>`;
+                tb.innerHTML += `<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg.toFixed(2)}</td><td>${item.total_gift}</td></tr>`;
             });
         });
     });
@@ -297,7 +299,26 @@ function renderXunyiChart(){
             maintainAspectRatio: true,
             plugins: {
                 legend: { display: false },
-                tooltip: createTooltipWithDiff('赞', false)
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    itemSort: (a, b) => b.parsed.y - a.parsed.y,
+                    callbacks: {
+                        label: function(context) {
+                            let value = context.parsed.y;
+                            let label = context.dataset.label || '';
+                            let diffText = '';
+                            let dataIndex = context.dataIndex;
+                            if(dataIndex > 0){
+                                let prevValue = context.dataset.data[dataIndex-1];
+                                let diff = value - prevValue;
+                                let sign = diff >=0 ? '+' : '';
+                                diffText = ` (${sign}${Math.round(diff)} 赞)`;
+                            }
+                            return `${label}: ${value} 赞${diffText}`;
+                        }
+                    }
+                }
             },
             scales: {
                 y: { beginAtZero: true, title: { display: true, text: '今日获赞总数' } },
@@ -342,7 +363,7 @@ async function loadXunyiLatest(){
                 }
             }
             xunyiLatestData = current;
-            // 保存原始顺序
+            // 保存原始顺序（按数据出现顺序）
             xunyiOriginalOrder = current.map(item => item.name);
             updateXunyiRankAndTable();
             // 杨博文对比
@@ -363,7 +384,7 @@ async function loadXunyiLatest(){
                     let diff = yang.total_points - yesterdayTotal;
                     let todayTime = full.timestamps[latestIdx];
                     let yesterdayTime = full.timestamps[yesterdayIdx];
-                    document.getElementById('xunyiCompareTable').innerHTML = `<table class="compare-table"><thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead><tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>}</table>`;
+                    document.getElementById('xunyiCompareTable').innerHTML = `<table class="compare-table"><thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead><tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody></table>`;
                 } else {
                     document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无昨日同时段数据</p>';
                 }
@@ -410,7 +431,7 @@ function renderXunyiTable(data){
     });
 }
 
-// 寻艺排序：非标识列只降序，标识列恢复原始顺序
+// 寻艺排序：非标识列始终降序，标识列恢复原始顺序
 function attachXunyiSortEvents(){
     let headers = document.querySelectorAll('#xunyiTableHeader th');
     headers.forEach(th => {
@@ -424,7 +445,7 @@ function xunyiSortHandler(e){
     let sorted;
     if(field === '标识') {
         // 恢复原始顺序
-        sorted = [...xunyiOriginalOrder.map(name => xunyiLatestData.find(item => item.name === name))];
+        sorted = xunyiOriginalOrder.map(name => xunyiLatestData.find(item => item.name === name));
     } else {
         // 降序排列
         sorted = [...xunyiLatestData].sort((a,b) => b[field] - a[field]);
