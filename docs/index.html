@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百度送花 & 寻艺数据看板</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" data-tab="baidu">🌸 百度送花数据</div>
+        <div class="tab" data-tab="xunyi">⭐ 寻艺数据</div>
+    </div>
+
+    <!-- 百度送花内容 -->
+    <div id="baidu-tab" class="tab-content active">
+        <div class="compare-box" id="compareContainer">
+            <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
+            <div id="compareTable">加载中...</div>
+        </div>
+        <div id="cardsContainer"></div>
+        <h3>📋 详细数据表 (点击表头排序)</h3>
+        <table class="data-table" id="dataTable">
+            <thead>
+                <tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
+            </thead>
+            <tbody id="tableBody"><tr><td colspan="5">加载中...</td></tr></tbody>
+        </table>
+        <div class="footer">
+            <div id="updateTime">等待数据...</div>
+            <div id="nextUpdate">下次更新: 计算中...</div>
+        </div>
+    </div>
+
+    <!-- 寻艺内容 -->
+    <div id="xunyi-tab" class="tab-content">
+        <div class="compare-box" id="xunyiCompareContainer">
+            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
+            <div id="xunyiCompareTable">加载中...</div>
+        </div>
+        <div class="rank-card" id="xunyiRankCard">
+            <div class="rank-left">
+                <h3>⭐ 今日获赞总数排名</h3>
+                <ul class="rank-list" id="xunyiRankList"></ul>
+            </div>
+            <div class="rank-right">
+                <div class="chart-header" id="xunyiChartDate"></div>
+                <div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div>
+            </div>
+        </div>
+        <h3>📋 详细数据 (点击表头排序)</h3>
+        <table class="data-table" id="xunyiTable">
+            <thead>
+                <tr id="xunyiTableHeader">
+                    <th data-sort="标识">标识</th>
+                    <th data-sort="total_points">今日获赞总数</th>
+                    <th data-sort="check3">三赞数量</th>
+                    <th data-sort="check2">二赞数量</th>
+                    <th data-sort="check1">一赞数量</th>
+                </tr>
+            </thead>
+            <tbody id="xunyiTableBody"></tbody>
+        </table>
+        <div class="footer" id="xunyiUpdateTime">等待数据...</div>
+    </div>
+</div>
+<div id="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; background-repeat: repeat; opacity: 0.3; background-size: 320px 200px;"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
