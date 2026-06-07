@@ -29,6 +29,7 @@ COMPARE_FILE = "docs/compare_yangbowen.json"
 XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
 BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"
 BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"
+WEIBO_DATA_FILE = "docs/weibo_data.json"      # 新增微博数据文件
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -45,6 +46,22 @@ BAIDU_INDEX_COOKIE = os.environ.get("BAIDU_INDEX_COOKIE", "")
 BAIDU_INDEX_CIPHER = os.environ.get("BAIDU_INDEX_CIPHER", "")
 if not BAIDU_INDEX_COOKIE or not BAIDU_INDEX_CIPHER:
     print("警告: 未设置 BAIDU_INDEX_COOKIE 或 BAIDU_INDEX_CIPHER，百度指数将跳过")
+
+# 微博相关凭证
+WEIBO_COOKIE = os.environ.get("WEIBO_COOKIE", "")
+if not WEIBO_COOKIE:
+    print("警告: 未设置 WEIBO_COOKIE 环境变量，微博数据将跳过")
+
+# ==================== 微博用户映射 ====================
+WEIBO_USER_LIST = [
+    ("6353131515", "张桂源"),
+    ("7740929779", "张函瑞"),
+    ("3625607515", "王橹杰"),
+    ("3448351424", "左奇函"),
+    ("6320179782", "陈奕恒"),
+    ("7817162132", "杨博文"),
+    ("3177765082", "陈浚铭"),
+]
 
 # ==================== 读取数据 ====================
 def load_baidu_tasks():
@@ -381,6 +398,99 @@ def fetch_baidu_index_yang_history():
     else:
         return []
 
+# ==================== 微博接口 ====================
+def extract_weibo_xsrf(cookie: str) -> str:
+    match = re.search(r'XSRF-TOKEN=([^;]+)', cookie)
+    return match.group(1) if match else ""
+
+def to_int(value):
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return value
+    return int(str(value).replace(',', ''))
+
+def fetch_weibo_user(uid: str, cookie: str) -> dict:
+    url = f"https://weibo.com/ajax/profile/info?uid={uid}&scene=profile"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Cookie": cookie,
+        "X-Requested-With": "XMLHttpRequest",
+        "X-XSRF-TOKEN": extract_weibo_xsrf(cookie),
+        "Referer": f"https://weibo.com/u/{uid}?tabtype=superTopic",
+    }
+    resp = requests.get(url, headers=headers, timeout=15)
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("ok") == 1 and "user" in data.get("data", {}):
+        user = data["data"]["user"]
+        counter = user.get("status_total_counter", {})
+        return {
+            "comment": to_int(counter.get("comment_cnt")),
+            "repost": to_int(counter.get("repost_cnt")),
+            "like": to_int(counter.get("like_cnt")),
+            "total": to_int(counter.get("total_cnt")),
+            "followers": to_int(user.get("followers_count"))
+        }
+    else:
+        raise ValueError("微博API返回异常：" + json.dumps(data, ensure_ascii=False))
+
+def load_old_weibo_data():
+    if os.path.exists(WEIBO_DATA_FILE):
+        try:
+            with open(WEIBO_DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    return {"date": "", "baseline": {}, "current": {}}
+
+def fetch_all_weibo_data():
+    if not WEIBO_COOKIE:
+        print("微博Cookie未设置，跳过微博数据抓取")
+        return
+    print("开始抓取微博数据...")
+    old = load_old_weibo_data()
+    today_str = beijing_now().strftime("%Y-%m-%d")
+    current = {}
+    for uid, name in WEIBO_USER_LIST:
+        try:
+            info = fetch_weibo_user(uid, WEIBO_COOKIE)
+            current[uid] = info
+            print(f"✅ 微博 {name} 数据获取成功")
+        except Exception as e:
+            print(f"❌ 微博 {name} 获取失败：{e}")
+            # 失败时优先保留旧 current，其次旧 baseline，最后给默认0
+            old_cur = old.get("current", {}).get(uid)
+            if old_cur:
+                current[uid] = old_cur
+            else:
+                old_base = old.get("baseline", {}).get(uid)
+                if old_base:
+                    current[uid] = old_base
+                else:
+                    current[uid] = {"comment": 0, "repost": 0, "like": 0, "total": 0, "followers": 0}
+    # 处理baseline (今日0点基准)
+    baseline = old.get("baseline", {})
+    if old.get("date") != today_str or not baseline:
+        baseline = {}
+        for uid, info in current.items():
+            baseline[uid] = {
+                "comment": info["comment"],
+                "repost": info["repost"],
+                "like": info["like"],
+                "total": info["total"]
+            }
+        print("📅 微博基准已刷新（新的一天）")
+    new_data = {
+        "date": today_str,
+        "baseline": baseline,
+        "current": current,
+        "update_time": beijing_now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    save_history(WEIBO_DATA_FILE, new_data)
+    print(f"微博数据已保存到 {WEIBO_DATA_FILE}")
+
 # ==================== 并发抓取函数 ====================
 def fetch_all_baidu_data_concurrent(tasks):
     results = []
@@ -415,6 +525,7 @@ def fetch_all_xunyi_data_concurrent(mapping):
 # ==================== main ====================
 def main():
     start_time = time.time()
+    os.makedirs("docs", exist_ok=True)
     
     # 1. 百度送花（并发）
     baidu_tasks = load_baidu_tasks()
@@ -469,6 +580,9 @@ def main():
             print("百度指数关键词列表为空")
     else:
         print("百度指数凭证缺失，跳过")
+
+    # 4. 微博数据
+    fetch_all_weibo_data()
 
     elapsed = time.time() - start_time
     print(f"所有数据更新完成，总耗时: {elapsed:.2f} 秒")
