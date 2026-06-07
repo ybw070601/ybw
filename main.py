@@ -411,9 +411,9 @@ def fetch_baidu_index_yang_history():
     else:
         return []
 
-# ==================== 微博模块 ====================
+# ==================== 微博模块（增强版） ====================
 def fetch_weibo_data(uid, retry=2):
-    """抓取单个用户的微博实时数据，增加重试和详细日志"""
+    """抓取单个用户的微博实时数据，增加详细日志"""
     if not WEIBO_COOKIE:
         print("微博Cookie未设置，跳过抓取")
         return None
@@ -422,7 +422,7 @@ def fetch_weibo_data(uid, retry=2):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-        "Referer": f"https://weibo.com/u/{uid}",
+        "Referer": "https://weibo.com/",
         "Cookie": WEIBO_COOKIE,
         "X-Requested-With": "XMLHttpRequest",
         "Connection": "keep-alive",
@@ -433,7 +433,12 @@ def fetch_weibo_data(uid, retry=2):
     for attempt in range(retry):
         try:
             resp = requests.get(url, headers=headers, timeout=10)
+            # 打印状态码和响应片段用于调试
+            print(f"  请求 {uid} 状态码: {resp.status_code}")
             if resp.status_code == 200:
+                # 打印响应前200字符（可能包含错误信息）
+                resp_text = resp.text[:200]
+                print(f"  响应片段: {resp_text}")
                 data = resp.json()
                 if data.get('ok') == 1 and 'data' in data:
                     d = data['data']
@@ -445,14 +450,17 @@ def fetch_weibo_data(uid, retry=2):
                         "followers_count": int(d.get('followers_count', 0))
                     }
                 else:
-                    print(f"微博API返回错误: {data.get('msg', '未知错误')}")
+                    print(f"  微博API返回错误: {data.get('msg', '未知错误')}")
                     return None
+            elif resp.status_code == 403:
+                print("  访问被拒绝（403），可能是Cookie无效或IP被限制")
+                return None
             else:
-                print(f"微博数据抓取失败 {uid}: HTTP {resp.status_code}")
+                print(f"  微博数据抓取失败 {uid}: HTTP {resp.status_code}")
                 if attempt < retry-1:
                     time.sleep(2)
         except Exception as e:
-            print(f"微博数据抓取异常 {uid} (尝试 {attempt+1}/{retry}): {str(e)}")
+            print(f"  微博数据抓取异常 {uid} (尝试 {attempt+1}/{retry}): {str(e)}")
             if attempt < retry-1:
                 time.sleep(2)
     return None
@@ -487,16 +495,19 @@ def save_weibo_data(weibo_uids, daily_snapshot):
         print("没有微博用户数据，跳过保存")
         return
     current_data = {}
+    success_count = 0
     for uid, name in weibo_uids.items():
         print(f"[微博实时] 抓取 {name} (UID: {uid}) 数据...")
         data = fetch_weibo_data(uid)
         if data:
             current_data[name] = data
+            success_count += 1
             print(f"  成功: 粉丝{data['followers_count']}, 评论{data['comment_cnt']}, 转发{data['repost_cnt']}, 点赞{data['like_cnt']}, 总数{data['total_cnt']}")
         else:
             current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
             print(f"  失败，使用默认0值")
         time.sleep(random.uniform(1, 2))
+    print(f"微博抓取完成，成功 {success_count}/{len(weibo_uids)} 个用户")
 
     snapshot_data = daily_snapshot.get("data", {})
     today_data = []
