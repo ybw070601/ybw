@@ -418,6 +418,7 @@ def main():
     
     # 1. 百度送花（并发）
     baidu_tasks = load_baidu_tasks()
+    baidu_results = []
     if baidu_tasks:
         print(f"百度送花 {len(baidu_tasks)} 个，开始并发抓取...")
         baidu_results = fetch_all_baidu_data_concurrent(baidu_tasks)
@@ -433,6 +434,7 @@ def main():
 
     # 2. 寻艺（并发）
     xunyi_mapping = load_xunyi_mapping()
+    xunyi_results = []
     if xunyi_mapping:
         print(f"寻艺 {len(xunyi_mapping)} 个，开始并发抓取...")
         xunyi_results = fetch_all_xunyi_data_concurrent(xunyi_mapping)
