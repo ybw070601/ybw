@@ -12,16 +12,10 @@ let baiduIndexOriginalOrder = [];
 let yangBaiduHistoryData = [];     // [{date, score}]
 let yangBaiduChart = null;
 
-// 微博相关变量
-let weiboTodayData = [];          // [{name, comment_inc, repost_inc, like_inc, total_inc}]
-let weiboTodayOriginalOrder = [];
-let weiboCumulativeData = [];     // [{name, followers_count, comment, repost, like, total}]
-let weiboCumulativeOriginalOrder = [];
-
 // 统一更新时间显示
 let globalLastUpdateTimeStr = '';
 
-// 颜色映射 (陈奕恒紫色)
+// 颜色映射 (陈奕恒紫色，陈俊铭使用陈浚明的颜色)
 const colorMap = {
     "张桂源": "#F9E511",
     "张函瑞": "#779649",
@@ -30,7 +24,7 @@ const colorMap = {
     "左齐函": "#10319f",
     "陈奕恒": "#9b59b6",
     "杨博文": "#F4A9AA",
-    "陈浚铭": "#E60012"
+    "陈俊铭": "#E60012"
 };
 function getColorForName(n) { return colorMap[n] || `hsl(${Math.abs(n.length * 37) % 360}, 70%, 55%)`; }
 function getLightBgColor(n) {
@@ -83,9 +77,6 @@ function updateGlobalTimeDisplay() {
 }
 
 // ==================== 百度送花模块 ====================
-async function loadBaiduTableAndCards() {
-    await loadLatest();      // 同时更新表格和卡片
-}
 async function loadCompare() {
     try {
         let r = await fetch('compare_yangbowen.json?_=' + Date.now());
@@ -104,10 +95,10 @@ function renderCompareTable() {
     let da = t.avg - y.avg;
     document.getElementById('compareTable').innerHTML = `
         <table class="compare-table">
-            <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></td></thead>
+            <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead>
             <tbody>
                 <tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
-                <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
+                <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}<tr></tr>
                 <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
             </tbody>
         </table>
@@ -279,7 +270,7 @@ async function loadLatest() {
         updateAllRankLists();
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduTableBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+        document.getElementById('baiduTableBody').innerHTML = '<tr><td colspan="5">暂无数据<\/td></tr>';
     }
 }
 function updateBaiduTable() {
@@ -574,7 +565,7 @@ async function loadBaiduIndex() {
         }
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduIndexTableBody').innerHTML = '</table><td colspan="2">暂无数据</td></tr>';
+        document.getElementById('baiduIndexTableBody').innerHTML = '<td><td colspan="2">暂无数据<\/td></table>';
     }
 }
 function renderBaiduIndexTable(data) {
@@ -656,117 +647,6 @@ function renderYangBaiduChart(data) {
     });
 }
 
-// ==================== 微博模块 ====================
-async function loadWeiboData() {
-    try {
-        let todayResp = await fetch('weibo_today.json?_=' + Date.now());
-        if (todayResp.ok) {
-            weiboTodayData = await todayResp.json();
-            weiboTodayOriginalOrder = weiboTodayData.map(item => item.name);
-            renderWeiboTodayTable(weiboTodayData);
-        } else {
-            console.warn('微博今日数据加载失败');
-            document.getElementById('weiboTodayBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
-        }
-        let cumulativeResp = await fetch('weibo_cumulative.json?_=' + Date.now());
-        if (cumulativeResp.ok) {
-            weiboCumulativeData = await cumulativeResp.json();
-            weiboCumulativeOriginalOrder = weiboCumulativeData.map(item => item.name);
-            renderWeiboCumulativeTable(weiboCumulativeData);
-        } else {
-            console.warn('微博累计数据加载失败');
-            document.getElementById('weiboCumulativeBody').innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
-        }
-        document.getElementById('weiboUpdateTime').innerHTML = `📅 最后更新: ${new Date().toLocaleString()}`;
-    } catch(e) {
-        console.error('微博数据加载失败:', e);
-    }
-}
-function renderWeiboTodayTable(data) {
-    let tbody = document.getElementById('weiboTodayBody');
-    tbody.innerHTML = '';
-    data.forEach(item => {
-        let bgColor = getLightBgColor(item.name);
-        let colorCircle = getColorForName(item.name);
-        let row = tbody.insertRow();
-        row.style.backgroundColor = bgColor;
-        let cell0 = row.insertCell(0);
-        cell0.innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.name}"></div>`;
-        let cell1 = row.insertCell(1);
-        cell1.textContent = item.comment_inc;
-        let cell2 = row.insertCell(2);
-        cell2.textContent = item.repost_inc;
-        let cell3 = row.insertCell(3);
-        cell3.textContent = item.like_inc;
-        let cell4 = row.insertCell(4);
-        cell4.textContent = item.total_inc;
-    });
-    attachWeiboTodaySortEvents();
-}
-function renderWeiboCumulativeTable(data) {
-    let tbody = document.getElementById('weiboCumulativeBody');
-    tbody.innerHTML = '';
-    data.forEach(item => {
-        let bgColor = getLightBgColor(item.name);
-        let colorCircle = getColorForName(item.name);
-        let row = tbody.insertRow();
-        row.style.backgroundColor = bgColor;
-        let cell0 = row.insertCell(0);
-        cell0.innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.name}"></div>`;
-        let cell1 = row.insertCell(1);
-        cell1.textContent = item.followers_count.toLocaleString();
-        let cell2 = row.insertCell(2);
-        cell2.textContent = item.comment;
-        let cell3 = row.insertCell(3);
-        cell3.textContent = item.repost;
-        let cell4 = row.insertCell(4);
-        cell4.textContent = item.like;
-        let cell5 = row.insertCell(5);
-        cell5.textContent = item.total;
-    });
-    attachWeiboCumulativeSortEvents();
-}
-function attachWeiboTodaySortEvents() {
-    let headers = document.querySelectorAll('#weiboTodayTable th');
-    headers.forEach(th => {
-        th.removeEventListener('click', weiboTodaySortHandler);
-        th.addEventListener('click', weiboTodaySortHandler);
-    });
-}
-function weiboTodaySortHandler(e) {
-    let th = e.target.closest('th');
-    if (!th) return;
-    let field = th.getAttribute('data-sort');
-    if (!field) return;
-    let sorted;
-    if (field === '标识') {
-        sorted = weiboTodayOriginalOrder.map(name => weiboTodayData.find(item => item.name === name));
-    } else {
-        sorted = [...weiboTodayData].sort((a,b) => b[field] - a[field]);
-    }
-    renderWeiboTodayTable(sorted);
-}
-function attachWeiboCumulativeSortEvents() {
-    let headers = document.querySelectorAll('#weiboCumulativeTable th');
-    headers.forEach(th => {
-        th.removeEventListener('click', weiboCumulativeSortHandler);
-        th.addEventListener('click', weiboCumulativeSortHandler);
-    });
-}
-function weiboCumulativeSortHandler(e) {
-    let th = e.target.closest('th');
-    if (!th) return;
-    let field = th.getAttribute('data-sort');
-    if (!field) return;
-    let sorted;
-    if (field === '标识') {
-        sorted = weiboCumulativeOriginalOrder.map(name => weiboCumulativeData.find(item => item.name === name));
-    } else {
-        sorted = [...weiboCumulativeData].sort((a,b) => b[field] - a[field]);
-    }
-    renderWeiboCumulativeTable(sorted);
-}
-
 // ==================== 选项卡切换 ====================
 function initTabs() {
     document.querySelectorAll('.tab').forEach(t => {
@@ -777,7 +657,6 @@ function initTabs() {
             document.getElementById('baidu-tab').classList.remove('active');
             document.getElementById('xunyi-tab').classList.remove('active');
             document.getElementById('baiduindex-tab').classList.remove('active');
-            document.getElementById('weibo-tab').classList.remove('active');
             if (target === 'baidu') {
                 document.getElementById('baidu-tab').classList.add('active');
                 if (!latestData) loadLatest();
@@ -790,9 +669,6 @@ function initTabs() {
             } else if (target === 'baiduindex') {
                 document.getElementById('baiduindex-tab').classList.add('active');
                 loadBaiduIndex();
-            } else if (target === 'weibo') {
-                document.getElementById('weibo-tab').classList.add('active');
-                loadWeiboData();
             }
         });
     });
@@ -812,16 +688,12 @@ window.onload = async () => {
     await loadXunyiLatest();
     attachXunyiSortEvents();
     loadBaiduIndex();
-    loadWeiboData();  // 预加载微博数据
     setInterval(() => {
         if (document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
         }
         if (document.getElementById('baiduindex-tab').classList.contains('active')) {
             loadBaiduIndex();
-        }
-        if (document.getElementById('weibo-tab').classList.contains('active')) {
-            loadWeiboData();
         }
     }, 60000);
 };
