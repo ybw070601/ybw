@@ -18,38 +18,28 @@
 
     <!-- 百度送花内容 -->
     <div id="baidu-tab" class="tab-content active">
+        <!-- 详细数据表放在最顶上 -->
+        <h3>📋 今日百度送花数据 (点击表头排序)</h3>
+        <table class="data-table" id="baiduDataTable">
+            <thead>
+                <tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
+            </thead>
+            <tbody id="baiduTableBody"><tr><td colspan="5">加载中...<\/td></tr></tbody>
+        </table>
+        <!-- 排名卡片 -->
         <div id="cardsContainer"></div>
+        <!-- 杨博文对比 -->
         <div class="compare-box" id="compareContainer" style="margin-top: 30px;">
             <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
             <div id="compareTable">加载中...</div>
         </div>
-        <h3>📋 详细数据表 (点击表头排序)</h3>
-        <table class="data-table" id="dataTable">
-            <thead>
-                <tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
-            </thead>
-            <tbody id="tableBody"><tr><td colspan="5">加载中...<\/td></table></tbody>
-        </table>
     </div>
 
     <!-- 寻艺内容 -->
     <div id="xunyi-tab" class="tab-content">
-        <div class="rank-card" id="xunyiRankCard">
-            <div class="rank-left">
-                <h3>⭐ 今日获赞总数排名</h3>
-                <ul class="rank-list" id="xunyiRankList"></ul>
-            </div>
-            <div class="rank-right">
-                <div class="chart-header" id="xunyiChartDate"></div>
-                <div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div>
-            </div>
-        </div>
-        <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
-            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
-            <div id="xunyiCompareTable">加载中...</div>
-        </div>
-        <h3>📋 详细数据 (点击表头排序)</h3>
-        <table class="data-table" id="xunyiTable">
+        <!-- 详细数据表放在最顶上 -->
+        <h3>⭐ 今日寻艺数据 (点击表头排序)</h3>
+        <table class="data-table" id="xunyiDataTable">
             <thead>
                 <tr id="xunyiTableHeader">
                     <th data-sort="标识">标识</th>
@@ -61,17 +51,35 @@
             </thead>
             <tbody id="xunyiTableBody"></tbody>
         </table>
+        <!-- 排名卡片 -->
+        <div class="rank-card" id="xunyiRankCard">
+            <div class="rank-left">
+                <h3>⭐ 今日获赞总数排名</h3>
+                <ul class="rank-list" id="xunyiRankList"></ul>
+            </div>
+            <div class="rank-right">
+                <div class="chart-header" id="xunyiChartDate"></div>
+                <div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div>
+            </div>
+        </div>
+        <!-- 杨博文对比 -->
+        <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
+            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
+            <div id="xunyiCompareTable">加载中...</div>
+        </div>
     </div>
 
     <!-- 百度指数内容 -->
     <div id="baiduindex-tab" class="tab-content">
-        <h3>📋 今日百度指数 (点击表头排序)</h3>
+        <!-- 详细数据表放在最顶上 -->
+        <h3>📋 今日百度指数数据 (点击表头排序)</h3>
         <table class="data-table" id="baiduIndexTable">
             <thead>
                 <tr><th data-sort="标识">标识</th><th data-sort="score">百度指数</th></tr>
             </thead>
-            <tbody id="baiduIndexTableBody"><tr><td colspan="2">加载中...<\/td></tr></tbody>
+            <tbody id="baiduIndexTableBody"><td><td colspan="2">加载中...<\/td></tr></tbody>
         </table>
+        <!-- 杨博文历史趋势 -->
         <h3>📈 杨博文 - 近15天百度指数趋势</h3>
         <div class="chart-container" style="height: 400px; margin-bottom: 30px;">
             <canvas id="yangBaiduIndexChart"></canvas>
