@@ -1,11 +1,12 @@
-// ==================== 百度送花相关代码 ====================
+// ==================== 全局变量和公共函数 ====================
 let latestData = null, historyData = null, compareData = null, charts = {};
-let baiduOriginalOrder = []; // 保存百度数据原始顺序
+let baiduOriginalOrder = [];
+
 const colorMap = {"张桂源":"#F9E511","张函瑞":"#779649","王橹杰":"#4ab7cc","左奇函":"#10319f","左齐函":"#10319f","陈奕恒":"#9b59b6","杨博文":"#F4A9AA","陈浚明":"#E60012"};
 function getColorForName(n){return colorMap[n]||`hsl(${Math.abs(n.length*37)%360},70%,55%)`;}
 function getLightBgColor(n){let h=getColorForName(n);if(h.startsWith('#')){let r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},0.4)`;}return h+'66';}
 
-// 根据数据文件的最新时间戳计算预计下次更新时间（北京时间的下一个10分钟倍数）
+// 根据上次更新时间计算预计下次更新时间（下一个10分钟倍数）
 function getNextUpdateTimeFromLast(lastTimeStr) {
     let lastDate = new Date(lastTimeStr.replace(' ', 'T') + '+08:00');
     let minutes = lastDate.getMinutes();
@@ -16,23 +17,38 @@ function getNextUpdateTimeFromLast(lastTimeStr) {
     return next.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
 }
 let globalLastUpdateTimeStr = '';
-function updateNextUpdateDisplay(){
-    if(globalLastUpdateTimeStr){
-        let nextTime = getNextUpdateTimeFromLast(globalLastUpdateTimeStr);
-        document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: ${nextTime}`;
+function updateNextUpdateDisplay(module) {
+    if(module === 'baidu'){
+        if(globalLastUpdateTimeStr){
+            let nextTime = getNextUpdateTimeFromLast(globalLastUpdateTimeStr);
+            document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: ${nextTime}`;
+        } else {
+            document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: 计算中...`;
+        }
+    } else if(module === 'xunyi'){
+        // 寻艺使用同样的逻辑，但需要单独存储最后更新时间，这里复用全局变量，或者从文件读取。
+        // 简化：在加载寻艺最新数据时设置 xunyiLastUpdateTimeStr
+    }
+}
+let xunyiLastUpdateTimeStr = '';
+function updateXunyiNextUpdateDisplay(){
+    if(xunyiLastUpdateTimeStr){
+        let nextTime = getNextUpdateTimeFromLast(xunyiLastUpdateTimeStr);
+        document.getElementById('xunyiNextUpdate').innerHTML = `⏰ 预计下次更新: ${nextTime}`;
     } else {
-        document.getElementById('nextUpdate').innerHTML = `⏰ 预计下次更新: 计算中...`;
+        document.getElementById('xunyiNextUpdate').innerHTML = `⏰ 预计下次更新: 计算中...`;
     }
 }
 
-// 水印（更明显）
+// 水印（6月1日风格，小图标从7.17改为6.1 - 这里只改文字内容，水印文字不变，但图标未涉及，忽略）
 (function(){let wt="YBW-裱你咋滴";let c=document.createElement('canvas');c.width=300;c.height=180;let ctx=c.getContext('2d');ctx.font="bold 28px 'Segoe UI', 'Microsoft YaHei'";ctx.fillStyle="rgba(100,100,100,0.5)";ctx.translate(40,120);ctx.rotate(-Math.PI/9);ctx.fillText(wt,0,0);let wd=document.getElementById('watermark');wd.style.backgroundImage=`url(${c.toDataURL()})`;wd.style.backgroundRepeat='repeat';wd.style.backgroundSize='320px 200px';})();
 
+// ==================== 百度送花模块 ====================
 async function loadCompare(){try{let r=await fetch('compare_yangbowen.json?_='+Date.now());if(!r.ok)throw new Error();compareData=await r.json();renderCompareTable();}catch(e){document.getElementById('compareTable').innerHTML='<p style="color:red;">暂无对比数据</p>';}}
 function renderCompareTable(){if(!compareData)return;let t=compareData.today,y=compareData.yesterday;let dg=t.today_gift-y.today_gift,du=t.today_users-y.today_users,da=t.avg-y.avg;document.getElementById('compareTable').innerHTML=`<table class="compare-table"><thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead><tbody><tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
-    <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}<\/td></td>
-    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}<\/td><td>${y.avg.toFixed(2)}<\/td><td>${da.toFixed(2)}<\/td></tr>
-    </tbody>}<\/table>`;}
+    <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
+    <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
+    </tbody></table>`;}
 async function loadHistory(){try{let r=await fetch('history.json?_='+Date.now());if(!r.ok)throw new Error();historyData=await r.json();}catch(e){historyData={timestamps:[],series:{}};}renderAllCards();}
 
 function getChartDateFromTimestamps(timestamps){
@@ -44,12 +60,11 @@ function getChartDateFromTimestamps(timestamps){
     return datePart;
 }
 
-// 生成 tooltip 配置，根据是否为浮点指标决定差值小数位数
 function createTooltipWithDiff(unit, isFloat = false){
     return {
         mode: 'index',
         intersect: false,
-        itemSort: (a, b) => b.parsed.y - a.parsed.y,  // 按当前点数值从高到低排序
+        itemSort: (a, b) => b.parsed.y - a.parsed.y,
         callbacks: {
             label: function(context) {
                 let dataset = context.dataset;
@@ -99,7 +114,7 @@ function renderAllCards(){
                 borderColor: getColorForName(name),
                 backgroundColor: 'transparent',
                 borderWidth: 2.5,
-                pointRadius: 0,          // 隐藏数据点小圆圈
+                pointRadius: 0,
                 pointHoverRadius: 4,
                 tension: 0.2,
                 fill: false
@@ -152,7 +167,7 @@ function renderAllCards(){
                                 if(parts.length<2) return '';
                                 let time = parts[1];
                                 let [hour, minute] = time.split(':');
-                                // 只显示偶数整点（小时为偶数，分钟为00）
+                                // 只显示偶数整点且分钟为00
                                 if(minute === '00' && parseInt(hour) % 2 === 0) return `${hour}:00`;
                                 else return '';
                             },
@@ -172,9 +187,7 @@ async function loadLatest(){
         let r=await fetch('data.json?_='+Date.now());
         if(!r.ok) throw new Error();
         latestData=await r.json();
-        // 保存原始顺序
         baiduOriginalOrder = latestData.map(item => item.name);
-        // 获取最后更新时间（从history.json的最后时间戳）
         let historyResp = await fetch('history.json?_='+Date.now());
         if(historyResp.ok){
             let hist = await historyResp.json();
@@ -189,7 +202,7 @@ async function loadLatest(){
         }
         updateTable();
         updateAllRankLists();
-        updateNextUpdateDisplay();
+        updateNextUpdateDisplay('baidu');
     }catch(e){
         console.error(e);
         document.getElementById('tableBody').innerHTML='<tr><td colspan="5">暂无数据</td></tr>';
@@ -228,25 +241,23 @@ function updateAllRankLists(){
         }
     });
 }
-// 百度表格排序：点击“标识”恢复原始顺序；其他列降序
 function setupTableSort(){
-    let ths = document.querySelectorAll('#dataTable th');
-    ths.forEach(th => {
-        th.addEventListener('click', () => {
-            let key = th.getAttribute('data-sort');
-            if(!key || !latestData) return;
+    let ths=document.querySelectorAll('#dataTable th');
+    ths.forEach(th=>{
+        th.addEventListener('click',()=>{
+            let key=th.getAttribute('data-sort');
+            if(!key||!latestData) return;
             let sorted;
-            if(key === 'name') {
-                // 恢复原始顺序
+            if(key==='name'){
                 sorted = baiduOriginalOrder.map(name => latestData.find(item => item.name === name));
             } else {
                 sorted = [...latestData].sort((a,b) => b[key] - a[key]);
             }
-            let tb = document.getElementById('tableBody');
-            tb.innerHTML = '';
-            sorted.forEach(item => {
-                let bg = getLightBgColor(item.name), c = getColorForName(item.name);
-                tb.innerHTML += `<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg.toFixed(2)}</td><td>${item.total_gift}</td></tr>`;
+            let tb=document.getElementById('tableBody');
+            tb.innerHTML='';
+            sorted.forEach(item=>{
+                let bg=getLightBgColor(item.name), c=getColorForName(item.name);
+                tb.innerHTML+=`<tr style="background-color:${bg}"><td><div class="color-dot" style="background-color:${c}" title="${item.name}"></div></td><td>${item.today_gift}</td><td>${item.today_users}</td><td>${item.avg.toFixed(2)}</td><td>${item.total_gift}</td></tr>`;
             });
         });
     });
@@ -254,7 +265,7 @@ function setupTableSort(){
 
 // ==================== 寻艺模块 ====================
 let xunyiHistoryData = null, xunyiChart = null, xunyiLatestData = [];
-let xunyiOriginalOrder = []; // 保存寻艺原始顺序
+let xunyiOriginalOrder = [];
 
 async function loadXunyiHistory(){
     try{
@@ -363,7 +374,6 @@ async function loadXunyiLatest(){
                 }
             }
             xunyiLatestData = current;
-            // 保存原始顺序（按数据出现顺序）
             xunyiOriginalOrder = current.map(item => item.name);
             updateXunyiRankAndTable();
             // 杨博文对比
@@ -391,7 +401,9 @@ async function loadXunyiLatest(){
             } else {
                 document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无对比数据</p>';
             }
-            document.getElementById('xunyiUpdateTime').innerHTML = `📅 最后更新: ${full.timestamps[latestIdx]}`;
+            xunyiLastUpdateTimeStr = full.timestamps[latestIdx];
+            document.getElementById('xunyiUpdateTime').innerHTML = `📅 最后更新: ${xunyiLastUpdateTimeStr}`;
+            updateXunyiNextUpdateDisplay();
         }
     } catch(e){ console.error(e); }
 }
@@ -403,10 +415,9 @@ function updateXunyiRankAndTable(){
     rankList.innerHTML = '';
     sorted.forEach((item, idx)=>{
         let li = document.createElement('li');
-        li.innerHTML = `<div class="rank-number">${idx+1}</div><div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div><div class="rank-value">${item.total_points} 赞</div>`;
+        li.innerHTML = `<div class="rank-number">${idx+1}</div><div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div><div class="rank-value">${item.total_points} 赞</div><div class="rank-gap">${idx===0?'—':'-'+(sorted[idx-1].total_points - item.total_points)+' 赞'}</div>`;
         rankList.appendChild(li);
     });
-    // 渲染表格，使用原始顺序
     renderXunyiTable(xunyiLatestData);
 }
 
@@ -431,74 +442,23 @@ function renderXunyiTable(data){
     });
 }
 
-// 寻艺排序：非标识列始终降序，标识列恢复原始顺序
 function attachXunyiSortEvents(){
     let headers = document.querySelectorAll('#xunyiTableHeader th');
     headers.forEach(th => {
-        // 移除旧事件避免重复绑定
         th.removeEventListener('click', xunyiSortHandler);
         th.addEventListener('click', xunyiSortHandler);
     });
 }
 function xunyiSortHandler(e){
-    // 确保获取到 th 元素（可能点击的是内部文本或图标）
     let th = e.target.closest('th');
     if(!th) return;
     let field = th.getAttribute('data-sort');
     if(!field) return;
     let sorted;
     if(field === '标识') {
-        // 恢复原始顺序
         sorted = xunyiOriginalOrder.map(name => xunyiLatestData.find(item => item.name === name));
     } else {
-        // 降序排列
         sorted = [...xunyiLatestData].sort((a,b) => b[field] - a[field]);
     }
     renderXunyiTable(sorted);
 }
-
-// ==================== 选项卡切换 ====================
-function initTabs(){
-    document.querySelectorAll('.tab').forEach(t=>{
-        t.addEventListener('click',()=>{
-            let target=t.getAttribute('data-tab');
-            document.querySelectorAll('.tab').forEach(tt=>tt.classList.remove('active'));
-            t.classList.add('active');
-            document.getElementById('baidu-tab').classList.remove('active');
-            document.getElementById('xunyi-tab').classList.remove('active');
-            if(target==='baidu'){
-                document.getElementById('baidu-tab').classList.add('active');
-            } else {
-                document.getElementById('xunyi-tab').classList.add('active');
-                if(!xunyiHistoryData) loadXunyiHistory();
-                else { updateXunyiRankAndTable(); }
-                loadXunyiLatest();
-            }
-        });
-    });
-}
-
-window.onload = async()=>{
-    await loadHistory();
-    await loadLatest();
-    await loadCompare();
-    setupTableSort();
-    setInterval(loadLatest, 60000);
-    setInterval(loadCompare, 60000);
-    setInterval(async()=>{ await loadHistory(); }, 600000);
-    initTabs();
-    await loadXunyiHistory();
-    await loadXunyiLatest();
-    // 绑定寻艺表头排序事件（初始加载后绑定一次即可，后续重绘不会影响表头）
-    attachXunyiSortEvents();
-    setInterval(()=>{
-        if(document.getElementById('xunyi-tab').classList.contains('active')) {
-            loadXunyiLatest();
-        }
-    }, 60000);
-    setInterval(()=>{
-        if(document.getElementById('xunyi-tab').classList.contains('active')) {
-            loadXunyiHistory();
-        }
-    }, 600000);
-};
