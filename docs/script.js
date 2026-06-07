@@ -103,9 +103,9 @@ function renderCompareTable() {
         <table class="compare-table">
             <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead>
             <tbody>
-                <tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
-                <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
-                <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
+                <tr><td style="font-weight:bold">今日送花(朵)<\/td><td>${t.today_gift}<\/td><td>${y.today_gift}<\/td><td style="color:${dg>=0?'green':'red'}">${dg}<\/td></tr>
+                <tr><td style="font-weight:bold">今日人数(人)<\/td><td>${t.today_users}<\/td><td>${y.today_users}<\/td><td style="color:${du>=0?'green':'red'}">${du}<\/td></tr>
+                <tr><td style="font-weight:bold">人均(朵/人)<\/td><td>${t.avg.toFixed(2)}<\/td><td>${y.avg.toFixed(2)}<\/td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}<\/td></tr>
             </tbody>
         </table>
     `;
@@ -261,7 +261,6 @@ async function loadLatest() {
         let r = await fetch('data.json?_=' + Date.now());
         if (!r.ok) throw new Error();
         latestData = await r.json();
-        // 按自定义顺序排序
         latestData = sortByCustomOrder(latestData, 'name');
         baiduOriginalOrder = latestData.map(item => item.name);
         let historyResp = await fetch('history.json?_=' + Date.now());
@@ -280,7 +279,7 @@ async function loadLatest() {
         updateAllRankLists();
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduTableBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+        document.getElementById('baiduTableBody').innerHTML = '<tr><td colspan="5">暂无数据<\/td></tr>';
     }
 }
 function updateBaiduTable() {
@@ -470,7 +469,6 @@ async function loadXunyiLatest() {
                     current.push({ name, total_points: pt, check1: c1, check2: c2, check3: c3 });
                 }
             }
-            // 按自定义顺序排序
             current = sortByCustomOrder(current, 'name');
             xunyiLatestData = current;
             xunyiOriginalOrder = current.map(item => item.name);
@@ -495,7 +493,7 @@ async function loadXunyiLatest() {
                     document.getElementById('xunyiCompareTable').innerHTML = `
                         <table class="compare-table">
                             <thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead>
-                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>
+                            <tbody><tr><td style="font-weight:bold">获赞总数<\/td><td>${yang.total_points}<\/td><td>${yesterdayTotal}<\/td><td style="color:${diff>=0?'green':'red'}">${diff}<\/td></tr></tbody>
                         </table>
                     `;
                 } else {
@@ -509,14 +507,23 @@ async function loadXunyiLatest() {
 }
 function updateXunyiRankAndTable() {
     if (!xunyiLatestData.length) return;
+    // 按 total_points 降序排序用于排名
     let sorted = [...xunyiLatestData].sort((a,b) => b.total_points - a.total_points);
     let rankList = document.getElementById('xunyiRankList');
     rankList.innerHTML = '';
     sorted.forEach((item, idx) => {
+        let prev = idx > 0 ? sorted[idx-1].total_points : null;
+        let gap = idx === 0 ? '—' : `-${(prev - item.total_points)} 赞`;
         let li = document.createElement('li');
-        li.innerHTML = `<div class="rank-number">${idx+1}</div><div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div><div class="rank-value">${item.total_points} 赞</div>`;
+        li.innerHTML = `
+            <div class="rank-number">${idx+1}</div>
+            <div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div>
+            <div class="rank-value">${item.total_points} 赞</div>
+            <div class="rank-gap">${gap}</div>
+        `;
         rankList.appendChild(li);
     });
+    // 详细表格保持自定义顺序（已排序）
     renderXunyiTable(xunyiLatestData);
 }
 function renderXunyiTable(data) {
@@ -566,7 +573,6 @@ async function loadBaiduIndex() {
         let resp = await fetch('baidu_index_today.json?_=' + Date.now());
         if (!resp.ok) throw new Error();
         let todayData = await resp.json();
-        // 按自定义顺序排序
         todayData = sortByCustomOrder(todayData, 'name');
         baiduIndexData = todayData.map(item => ({ name: item.name, score: item.score }));
         baiduIndexOriginalOrder = baiduIndexData.map(item => item.name);
@@ -581,7 +587,7 @@ async function loadBaiduIndex() {
         }
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduIndexTableBody').innerHTML = '<tr><td colspan="2">暂无数据</td><tr>';
+        document.getElementById('baiduIndexTableBody').innerHTML = '<tr><td colspan="2">暂无数据<\/td></tr>';
     }
 }
 function renderBaiduIndexTable(data) {
@@ -625,7 +631,7 @@ function renderYangBaiduHistoryTable(data) {
     let tbody = document.getElementById('yangBaiduHistoryBody');
     tbody.innerHTML = '';
     data.forEach(item => {
-        let row = `<tr><td>${item.date}</td><td>${item.score.toLocaleString()}</td></tr>`;
+        let row = `<tr><td style="text-align:center">${item.date}<\/td><td style="text-align:center">${item.score.toLocaleString()}<\/td></tr>`;
         tbody.innerHTML += row;
     });
 }
