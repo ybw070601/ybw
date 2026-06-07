@@ -1,34 +1,118 @@
-<!-- 在现有的选项卡后面新增一个 -->
-<div class="tabs">
-    <div class="tab active" data-tab="baidu">🌸 百度送花数据</div>
-    <div class="tab" data-tab="xunyi">⭐ 寻艺数据</div>
-    <div class="tab" data-tab="baiduindex">📈 百度指数</div>
-    <div class="tab" data-tab="weibo">🐦 微博个人数据</div> <!-- 新增 -->
-</div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杨博文相关数据看板</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <h1 style="text-align: center; color: #1e466e; margin-bottom: 20px;">🌸 杨博文相关数据看板</h1>
+    <div class="tabs">
+        <div class="tab active" data-tab="baidu">🌸 百度送花数据</div>
+        <div class="tab" data-tab="xunyi">⭐ 寻艺数据</div>
+        <div class="tab" data-tab="baiduindex">📈 百度指数</div>
+        <div class="tab" data-tab="weibo">🐦 微博个人数据</div>
+    </div>
 
-<!-- ... 百度送花、寻艺、百度指数等原有的内容保持不变 ... -->
+    <!-- 百度送花内容 -->
+    <div id="baidu-tab" class="tab-content active">
+        <h3>📋 今日百度送花数据 (点击表头排序)</h3>
+        <table class="data-table" id="baiduDataTable">
+            <thead>
+                <tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr>
+            </thead>
+            <tbody id="baiduTableBody"><tr><td colspan="5">加载中...<\/td></table></tbody>
+        </table>
+        <div id="cardsContainer"></div>
+        <div class="compare-box" id="compareContainer" style="margin-top: 30px;">
+            <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
+            <div id="compareTable">加载中...</div>
+        </div>
+    </div>
 
-<!-- 新增的微博内容 -->
-<div id="weibo-tab" class="tab-content">
-    <h3>📊 今日个人微博数据 (点击表头排序)</h3>
-    <table class="data-table" id="weiboTodayTable">
-        <thead>
-            <tr><th data-sort="标识">标识</th><th data-sort="comment_inc">评论增量</th><th data-sort="repost_inc">转发增量</th><th data-sort="like_inc">点赞增量</th><th data-sort="total_inc">转赞评增量总数</th></tr>
-        </thead>
-        <tbody id="weiboTodayBody"></tbody>
-    </table>
-    <h3>📊 累计个人微博数据 (点击表头排序)</h3>
-    <table class="data-table" id="weiboCumulativeTable">
-        <thead>
-            <tr><th data-sort="标识">标识</th><th data-sort="followers_count">粉丝数</th><th data-sort="comment">评论</th><th data-sort="repost">转发</th><th data-sort="like">点赞</th><th data-sort="total">转赞评总数</th></tr>
-        </thead>
-        <tbody id="weiboCumulativeBody"></tbody>
-    </table>
-    <div class="footer" id="weiboUpdateTime">等待数据...</div>
-</div>
+    <!-- 寻艺内容 -->
+    <div id="xunyi-tab" class="tab-content">
+        <h3>⭐ 今日寻艺数据 (点击表头排序)</h3>
+        <table class="data-table" id="xunyiDataTable">
+            <thead>
+                <tr id="xunyiTableHeader">
+                    <th data-sort="标识">标识</th>
+                    <th data-sort="total_points">今日获赞总数</th>
+                    <th data-sort="check3">三赞数量</th>
+                    <th data-sort="check2">二赞数量</th>
+                    <th data-sort="check1">一赞数量</th>
+                </tr>
+            </thead>
+            <tbody id="xunyiTableBody"></tbody>
+        </table>
+        <div class="rank-card" id="xunyiRankCard">
+            <div class="rank-left">
+                <h3>⭐ 今日获赞总数排名</h3>
+                <ul class="rank-list" id="xunyiRankList"></ul>
+            </div>
+            <div class="rank-right">
+                <div class="chart-header" id="xunyiChartDate"></div>
+                <div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div>
+            </div>
+        </div>
+        <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
+            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
+            <div id="xunyiCompareTable">加载中...</div>
+        </div>
+    </div>
 
-<!-- 在底部统一 footer 保持不变 -->
-<div class="footer">
-    <div id="updateTime">等待数据...</div>
-    <div id="nextUpdate">下次更新: 计算中...</div>
+    <!-- 百度指数内容 -->
+    <div id="baiduindex-tab" class="tab-content">
+        <h3>📋 今日百度指数数据 (点击表头排序)</h3>
+        <table class="data-table" id="baiduIndexTable">
+            <thead>
+                <tr><th data-sort="标识">标识</th><th data-sort="score">百度指数</th></tr>
+            </thead>
+            <tbody id="baiduIndexTableBody"><tr><td colspan="2">加载中...<\/td></tr></tbody>
+        </table>
+        <h3>📈 杨博文 - 近15天百度指数趋势</h3>
+        <div class="chart-container" style="height: 400px; margin-bottom: 30px;">
+            <canvas id="yangBaiduIndexChart"></canvas>
+        </div>
+        <h3>📋 杨博文历史数据表</h3>
+        <table class="data-table" id="yangBaiduHistoryTable">
+            <thead>
+                <tr><th>日期</th><th>百度指数</th></tr>
+            </thead>
+            <tbody id="yangBaiduHistoryBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 微博内容 -->
+    <div id="weibo-tab" class="tab-content">
+        <h3>📊 今日个人微博数据 (点击表头排序)</h3>
+        <table class="data-table" id="weiboTodayTable">
+            <thead>
+                <tr><th data-sort="标识">标识</th><th data-sort="comment_inc">评论增量</th><th data-sort="repost_inc">转发增量</th><th data-sort="like_inc">点赞增量</th><th data-sort="total_inc">转赞评增量总数</th></tr>
+            </thead>
+            <tbody id="weiboTodayBody"></tbody>
+        </table>
+        <h3>📊 累计个人微博数据 (点击表头排序)</h3>
+        <table class="data-table" id="weiboCumulativeTable">
+            <thead>
+                <tr><th data-sort="标识">标识</th><th data-sort="followers_count">粉丝数</th><th data-sort="comment">评论</th><th data-sort="repost">转发</th><th data-sort="like">点赞</th><th data-sort="total">转赞评总数</th></tr>
+            </thead>
+            <tbody id="weiboCumulativeBody"></tbody>
+        </table>
+        <div class="footer" id="weiboUpdateTime">等待数据...</div>
+    </div>
+
+    <!-- 统一底部 footer -->
+    <div class="footer">
+        <div id="updateTime">等待数据...</div>
+        <div id="nextUpdate">下次更新: 计算中...</div>
+    </div>
 </div>
+<div id="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; background-repeat: repeat; opacity: 0.3; background-size: 320px 200px;"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
