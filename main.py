@@ -19,15 +19,15 @@ def parse_beijing_time(ts_str):
 # ==================== 配置文件 ====================
 BAIDU_INPUT_FILE = "input.txt"
 XUNYI_MAPPING_FILE = "xunyi_mapping.txt"
-WECHAT_KEYWORDS_FILE = "wechat_keywords.txt"
-
 HISTORY_FILE = "docs/history.json"
 XUNYI_HISTORY_FILE = "docs/xunyi_history.json"
 DATA_FILE = "docs/data.json"
 COMPARE_FILE = "docs/compare_yangbowen.json"
 XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
-WECHAT_DATA_FILE = "docs/wechat_index.json"
-WECHAT_HISTORY_FILE = "docs/wechat_history.json"  # 新增：微信指数历史（存储杨博文三个系列）
+
+# 百度指数相关文件
+BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"      # 当日7人数据
+BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"  # 杨博文15天历史
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -38,6 +38,12 @@ if not RAW_COOKIE:
 def clean_cookie(c):
     return re.sub(r'[^\x20-\x7E]+', '', c).strip()
 COOKIE_STRING = clean_cookie(RAW_COOKIE)
+
+# 百度指数相关凭证
+BAIDU_INDEX_COOKIE = os.environ.get("BAIDU_INDEX_COOKIE", "")
+BAIDU_INDEX_CIPHER = os.environ.get("BAIDU_INDEX_CIPHER", "")
+if not BAIDU_INDEX_COOKIE or not BAIDU_INDEX_CIPHER:
+    print("警告: 未设置 BAIDU_INDEX_COOKIE 或 BAIDU_INDEX_CIPHER，百度指数将跳过")
 
 # ==================== 读取数据 ====================
 def load_baidu_tasks():
@@ -65,19 +71,6 @@ def load_xunyi_mapping():
             name, pid = line.split(',', 1)
             mapping[name.strip()] = int(pid.strip())
     return mapping
-
-def load_wechat_keywords():
-    """读取微信指数关键词，分组返回"""
-    if not os.path.exists(WECHAT_KEYWORDS_FILE):
-        return []
-    keywords = []
-    with open(WECHAT_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            keywords.append(line)
-    return keywords
 
 # ==================== 百度送花接口 ====================
 def build_headers(baikeid, name):
@@ -255,135 +248,147 @@ def generate_xunyi_compare(current_list, history):
         return lst[idx] if idx < len(lst) else 0
     yesterday_data = {"timestamp": timestamps[best_idx], "total_points": safe_get(yang_hist.get("total_points", []), best_idx)}
     return {"update_time": now.strftime("%Y-%m-%d %H:%M:%S"), "today": {"total_points": yang["total_points"]}, "yesterday": yesterday_data}
-    # ==================== 微信指数模块 ====================
-WECHAT_OPENID = "ov4ns0FADrRvqZarXIS-Aq0HPzrY"  # 固定 openid
-WECHAT_SEARCH_KEY = os.environ.get("WECHAT_SEARCH_KEY", "")  # 从环境变量读取
 
-def fetch_single_wechat(keyword):
-    """获取单个关键词的微信指数"""
-    if not WECHAT_SEARCH_KEY:
-        print("未设置 WECHAT_SEARCH_KEY，跳过")
+# ==================== 百度指数接口 ====================
+# 以下代码参考用户提供的脚本，已适配为函数形式
+def decrypt(ptbk, encrypted_data):
+    """解密百度指数数据"""
+    if not ptbk:
+        return ""
+    n = len(ptbk) // 2
+    d = {ptbk[o]: ptbk[n + o] for o in range(n)}
+    decrypted_data = [d[data] for data in encrypted_data]
+    return ''.join(decrypted_data)
+
+def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
+    """
+    抓取单个关键词的百度指数（全部、pc、wise）
+    返回字典包含 dates, all_data, pc_data, wise_data
+    """
+    if not BAIDU_INDEX_COOKIE or not BAIDU_INDEX_CIPHER:
         return None
-    url = "https://search.weixin.qq.com/cgi-bin/searchweb/wxindex/querywxindexgroup"
-    params = {
-        "openid": WECHAT_OPENID,
-        "search_key": WECHAT_SEARCH_KEY,
-        "timestamp": int(time.time() * 1000),
-        "wxindex_query_list": keyword
-    }
+    url = "https://index.baidu.com/api/SearchApi/index"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 MicroMessenger/7.0.20.1781",
-        "Referer": "https://servicewechat.com/wxc026e7662ec26a3a/77/page-frame.html",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
+        "Cache-Control": "no-cache",
+        "cipher-text": BAIDU_INDEX_CIPHER,
+        "Connection": "keep-alive",
+        "Cookie": BAIDU_INDEX_COOKIE,
+        "Host": "index.baidu.com",
+        "Pragma": "no-cache",
+        "Referer": "https://index.baidu.com/v2/main/index.html",
+        "sec-ch-ua": '"Microsoft Edge";v="149", "Chromium";v="149", "Not)A;Brand";v="24"',
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": '"Windows"',
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0"
+    }
+    # 构建请求参数
+    params = {
+        "area": "0",
+        "word": json.dumps([[{"name": keyword, "wordType": 1}]]),
+        "startDate": start_date,
+        "endDate": end_date
     }
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            if data.get("code") == 0 and data.get("data"):
-                for item in data["data"]:
-                    if item.get("keyword") == keyword:
-                        score = item.get("score", 0)
-                        date = str(item.get("time", datetime.now().strftime("%Y%m%d")))
-                        return {"keyword": keyword, "score": score, "date": date, "status": "成功"}
-                return {"keyword": keyword, "score": 0, "date": "", "status": "未找到数据"}
-            else:
-                return {"keyword": keyword, "score": 0, "date": "", "status": f"接口错误: {data.get('msg')}"}
-        else:
-            return {"keyword": keyword, "score": 0, "date": "", "status": f"HTTP {resp.status_code}"}
+        resp = requests.get(url, params=params, headers=headers, timeout=15)
+        if resp.status_code != 200:
+            print(f"百度指数请求失败 {keyword}: HTTP {resp.status_code}")
+            return None
+        data = resp.json()
+        if data.get("status") != 0 or "data" not in data:
+            print(f"百度指数返回错误 {keyword}: {data.get('msg')}")
+            return None
+        encrypted_data = data["data"]
+        uniqid = encrypted_data.get("uniqid")
+        if not uniqid:
+            print(f"百度指数无 uniqid {keyword}")
+            return None
+        # 获取ptbk
+        ptbk_url = f"http://index.baidu.com/Interface/ptbk?uniqid={uniqid}"
+        ptbk_resp = requests.get(ptbk_url, headers=headers, timeout=10)
+        if ptbk_resp.status_code != 200:
+            print(f"获取ptbk失败 {keyword}")
+            return None
+        ptbk = ptbk_resp.json().get("data", "")
+        if not ptbk:
+            print(f"ptbk为空 {keyword}")
+            return None
+
+        # 解析数据（用户提供的代码中 userIndexes 是一个列表，我们取第一个）
+        user_indexes = encrypted_data.get("userIndexes", [])
+        if not user_indexes:
+            return None
+        item = user_indexes[0]  # 只有一个关键词
+        # 解密 all, pc, wise
+        all_enc = item["all"]["data"]
+        pc_enc = item["pc"]["data"]
+        wise_enc = item["wise"]["data"]
+        all_str = decrypt(ptbk, all_enc)
+        pc_str = decrypt(ptbk, pc_enc)
+        wise_str = decrypt(ptbk, wise_enc)
+        if not all_str:
+            return None
+        # 解析数值
+        all_vals = [int(v) if v else 0 for v in all_str.split(",")]
+        pc_vals = [int(v) if v else 0 for v in pc_str.split(",")] if pc_str else []
+        wise_vals = [int(v) if v else 0 for v in wise_str.split(",")] if wise_str else []
+        # 生成日期列表
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+        dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
+        # 确保长度一致
+        if len(all_vals) != len(dates):
+            print(f"数据长度不一致 {keyword}: {len(all_vals)} vs {len(dates)}")
+            # 截断或补齐？一般不会出现，但以防万一
+            min_len = min(len(all_vals), len(dates))
+            dates = dates[:min_len]
+            all_vals = all_vals[:min_len]
+            pc_vals = pc_vals[:min_len] if pc_vals else []
+            wise_vals = wise_vals[:min_len] if wise_vals else []
+        return {
+            "dates": dates,
+            "all": all_vals,
+            "pc": pc_vals,
+            "wise": wise_vals
+        }
     except Exception as e:
-        return {"keyword": keyword, "score": 0, "date": "", "status": f"异常: {str(e)}"}
-
-def fetch_all_wechat():
-    """获取所有分组关键词的指数，并组织成表格数据"""
-    keywords = load_wechat_keywords()
-    if not keywords:
-        print("wechat_keywords.txt 为空或不存在")
+        print(f"百度指数抓取异常 {keyword}: {str(e)}")
         return None
-    
-    # 分组：第一组7人，第二组7人，第三组7人
-    # 按顺序解析
-    # 假设文件顺序：前7个为第一组（单人），接着7个为第二组（角色），最后7个为第三组（我们的少年时代2）
-    # 如果顺序不对，可以通过检测关键词特征来分组，但这里按固定顺序
-    group1_names = keywords[:7]   # 单人名字
-    group2_keywords = keywords[7:14]  # 角色
-    group3_keywords = keywords[14:21] # 我们的少年时代2
-    
-    # 同时获取杨博文的三项用于历史
-    yangwen_single = None
-    yangwen_role = None
-    yangwen_drama = None
-    
-    results = []
-    # 第一组（单人）
-    for kw in group1_names:
-        data = fetch_single_wechat(kw)
-        if data:
-            results.append({"type": "single", "name": kw, "score": data["score"], "date": data["date"], "status": data["status"]})
-            if kw == "杨博文":
-                yangwen_single = data["score"]
-    # 第二组（角色）
-    for kw in group2_keywords:
-        data = fetch_single_wechat(kw)
-        if data:
-            results.append({"type": "role", "name": kw, "score": data["score"], "date": data["date"], "status": data["status"]})
-            if kw == "杨博文 周扬":
-                yangwen_role = data["score"]
-    # 第三组（我们的少年时代2）
-    for kw in group3_keywords:
-        data = fetch_single_wechat(kw)
-        if data:
-            results.append({"type": "drama", "name": kw, "score": data["score"], "date": data["date"], "status": data["status"]})
-            if kw == "杨博文 我们的少年时代2":
-                yangwen_drama = data["score"]
-    
-    # 构建表格所需的数据结构：按人分组
-    # 假设名字对应关系：第一组顺序与第二、三组顺序对应
-    # 第一组7人顺序：张桂源, 张函瑞, 王橹杰, 左奇函, 陈奕恒, 杨博文, 陈浚明
-    single_names = group1_names
-    role_names = group2_keywords
-    drama_names = group3_keywords
-    
-    table_rows = []
-    for i in range(len(single_names)):
-        single_kw = single_names[i]
-        role_kw = role_names[i]
-        drama_kw = drama_names[i]
-        single_score = next((item["score"] for item in results if item["type"]=="single" and item["name"]==single_kw), 0)
-        role_score = next((item["score"] for item in results if item["type"]=="role" and item["name"]==role_kw), 0)
-        drama_score = next((item["score"] for item in results if item["type"]=="drama" and item["name"]==drama_kw), 0)
-        table_rows.append({
-            "name": single_kw,
-            "single_score": single_score,
-            "role_score": role_score,
-            "drama_score": drama_score,
-            "date": next((item["date"] for item in results if item["type"]=="single" and item["name"]==single_kw), ""),
-            "status": "成功"
-        })
-    
-    # 记录杨博文三个值用于历史
-    yangwen_data = {
-        "single": yangwen_single if yangwen_single is not None else 0,
-        "role": yangwen_role if yangwen_role is not None else 0,
-        "drama": yangwen_drama if yangwen_drama is not None else 0
-    }
-    
-    return {"table": table_rows, "yangwen": yangwen_data}
 
-# 更新微信指数历史（存储杨博文三个指标）
-def update_wechat_history(current_yangwen):
-    history = load_history(WECHAT_HISTORY_FILE, {"timestamps": [], "series": {"single": [], "role": [], "drama": []}})
-    now_str = beijing_now().strftime("%Y-%m-%d %H:%M:%S")
-    history["timestamps"].append(now_str)
-    max_points = 10  # 保留最近10天（每天一个点）
-    if len(history["timestamps"]) > max_points:
-        history["timestamps"] = history["timestamps"][-max_points:]
-        for key in ["single", "role", "drama"]:
-            if len(history["series"][key]) > max_points:
-                history["series"][key] = history["series"][key][-max_points:]
-    history["series"]["single"].append(current_yangwen["single"])
-    history["series"]["role"].append(current_yangwen["role"])
-    history["series"]["drama"].append(current_yangwen["drama"])
-    save_history(WECHAT_HISTORY_FILE, history)
+def fetch_baidu_index_today():
+    """获取7个人当天的百度指数（全部）"""
+    keywords = ["张桂源", "张函瑞", "王橹杰", "左奇函", "陈奕恒", "杨博文", "陈浚明"]
+    today_str = beijing_now().strftime("%Y-%m-%d")
+    results = []
+    for kw in keywords:
+        print(f"[百度指数] 抓取 {kw} 当日数据...")
+        data = fetch_baidu_index_for_keyword(kw, today_str, today_str)
+        if data and data["all"]:
+            score = data["all"][0]
+            results.append({"name": kw, "score": score, "date": today_str, "status": "成功"})
+        else:
+            results.append({"name": kw, "score": 0, "date": today_str, "status": "抓取失败"})
+        time.sleep(random.uniform(1, 2))
+    return results
+
+def fetch_baidu_index_yang_history():
+    """获取杨博文最近15天的百度指数（全部）"""
+    keyword = "杨博文"
+    end_date = beijing_now().strftime("%Y-%m-%d")
+    start_date = (beijing_now() - timedelta(days=14)).strftime("%Y-%m-%d")
+    print(f"[百度指数] 抓取杨博文历史数据 {start_date} 至 {end_date}")
+    data = fetch_baidu_index_for_keyword(keyword, start_date, end_date)
+    if data:
+        # 返回包含日期和指数的列表
+        history_list = [{"date": d, "score": v} for d, v in zip(data["dates"], data["all"])]
+        return history_list
+    else:
+        return []
 
 # ==================== main ====================
 def main():
@@ -423,19 +428,22 @@ def main():
                 with open(XUNYI_COMPARE_FILE, 'w', encoding='utf-8') as f:
                     json.dump(xunyi_compare, f, ensure_ascii=False, indent=2)
 
-    # 微信指数
-    if WECHAT_SEARCH_KEY:
-        wechat_data = fetch_all_wechat()
-        if wechat_data:
-            with open(WECHAT_DATA_FILE, 'w', encoding='utf-8') as f:
-                json.dump(wechat_data["table"], f, ensure_ascii=False, indent=2)
-            # 更新杨博文历史
-            update_wechat_history(wechat_data["yangwen"])
-            print("微信指数数据已更新")
-        else:
-            print("微信指数数据抓取失败")
+    # 百度指数
+    if BAIDU_INDEX_COOKIE and BAIDU_INDEX_CIPHER:
+        # 当日数据
+        today_data = fetch_baidu_index_today()
+        if today_data:
+            with open(BAIDU_INDEX_TODAY_FILE, 'w', encoding='utf-8') as f:
+                json.dump(today_data, f, ensure_ascii=False, indent=2)
+            print("百度指数当日数据已更新")
+        # 杨博文15天历史
+        yang_history = fetch_baidu_index_yang_history()
+        if yang_history:
+            with open(BAIDU_INDEX_YANG_HISTORY_FILE, 'w', encoding='utf-8') as f:
+                json.dump(yang_history, f, ensure_ascii=False, indent=2)
+            print("百度指数杨博文历史数据已更新")
     else:
-        print("未设置 WECHAT_SEARCH_KEY，跳过微信指数")
+        print("百度指数凭证缺失，跳过")
 
     print("所有数据更新完成")
 
