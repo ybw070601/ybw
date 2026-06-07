@@ -1,4 +1,4 @@
-name: 每10分钟抓取数据（百度送花+寻艺+微信指数）
+name: 每10分钟抓取数据（百度送花+寻艺+百度指数）
 
 on:
   schedule:
@@ -19,7 +19,8 @@ jobs:
       - run: python main.py
         env:
           BAIDU_COOKIE: ${{ secrets.BAIDU_COOKIE }}
-          WECHAT_SEARCH_KEY: ${{ secrets.WECHAT_SEARCH_KEY }}
+          BAIDU_INDEX_COOKIE: ${{ secrets.BAIDU_INDEX_COOKIE }}
+          BAIDU_INDEX_CIPHER: ${{ secrets.BAIDU_INDEX_CIPHER }}
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
