@@ -2,20 +2,16 @@
 let latestData = null, historyData = null, compareData = null, charts = {};
 let baiduOriginalOrder = [];
 
-// 寻艺相关变量
 let xunyiHistoryData = null, xunyiChart = null, xunyiLatestData = [];
 let xunyiOriginalOrder = [];
 
-// 百度指数相关变量
-let baiduIndexData = [];           // [{name, score}]
+let baiduIndexData = [];
 let baiduIndexOriginalOrder = [];
-let yangBaiduHistoryData = [];     // [{date, score}]
+let yangBaiduHistoryData = [];
 let yangBaiduChart = null;
 
-// 统一更新时间显示
 let globalLastUpdateTimeStr = '';
 
-// 颜色映射 
 const colorMap = {
     "张桂源": "#F9E511",
     "张函瑞": "#779649",
@@ -38,7 +34,6 @@ function getLightBgColor(n) {
     return h + '66';
 }
 
-// 水印
 (function() {
     let wt = "YBW-裱你咋滴";
     let c = document.createElement('canvas');
@@ -56,7 +51,6 @@ function getLightBgColor(n) {
     wd.style.backgroundSize = '320px 200px';
 })();
 
-// ==================== 辅助函数：预计下次更新时间 ====================
 function getNextUpdateTimeFromLast(lastTimeStr) {
     let lastDate = new Date(lastTimeStr.replace(' ', 'T') + '+08:00');
     let minutes = lastDate.getMinutes();
@@ -97,9 +91,9 @@ function renderCompareTable() {
         <table class="compare-table">
             <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead>
             <tbody>
-                <tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
-                <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}<tr></tr>
-                <tr><td style="font-weight:bold">人均(朵/人)</td><td>${t.avg.toFixed(2)}</td><td>${y.avg.toFixed(2)}</td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}</td></tr>
+                <tr><td style="font-weight:bold">今日送花(朵)<\/td><td>${t.today_gift}<\/td><td>${y.today_gift}<\/td><td style="color:${dg>=0?'green':'red'}">${dg}<\/td></tr>
+                <tr><td style="font-weight:bold">今日人数(人)<\/td><td>${t.today_users}<\/td><td>${y.today_users}<\/td><td style="color:${du>=0?'green':'red'}">${du}<\/td></tr>
+                <tr><td style="font-weight:bold">人均(朵/人)<\/td><td>${t.avg.toFixed(2)}<\/td><td>${y.avg.toFixed(2)}<\/td><td style="color:${da>=0?'green':'red'}">${da.toFixed(2)}<\/td></tr>
             </tbody>
         </table>
     `;
@@ -235,7 +229,10 @@ function renderAllCards() {
                                 if (parts.length < 2) return '';
                                 let time = parts[1];
                                 let [hour, minute] = time.split(':');
-                                if (minute === '00' && parseInt(hour) % 2 === 0) return `${hour}:00`;
+                                // 只显示整点且小时为0,4,8,12,16,20
+                                if (minute === '00' && [0,4,8,12,16,20].includes(parseInt(hour))) {
+                                    return `${hour}:00`;
+                                }
                                 return '';
                             },
                             autoSkip: true,
@@ -428,7 +425,9 @@ function renderXunyiChart() {
                             if (parts.length < 2) return '';
                             let time = parts[1];
                             let [hour, minute] = time.split(':');
-                            if (minute === '00' && parseInt(hour) % 2 === 0) return `${hour}:00`;
+                            if (minute === '00' && [0,4,8,12,16,20].includes(parseInt(hour))) {
+                                return `${hour}:00`;
+                            }
                             return '';
                         },
                         autoSkip: true,
@@ -481,7 +480,7 @@ async function loadXunyiLatest() {
                     document.getElementById('xunyiCompareTable').innerHTML = `
                         <table class="compare-table">
                             <thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead>
-                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>
+                            <tbody><tr><td style="font-weight:bold">获赞总数<\/td><td>${yang.total_points}<\/td><td>${yesterdayTotal}<\/td><td style="color:${diff>=0?'green':'red'}">${diff}<\/td></tr></tbody>
                         </table>
                     `;
                 } else {
@@ -565,7 +564,7 @@ async function loadBaiduIndex() {
         }
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduIndexTableBody').innerHTML = '<td><td colspan="2">暂无数据<\/td></table>';
+        document.getElementById('baiduIndexTableBody').innerHTML = '<tr><td colspan="2">暂无数据<\/td></tr>';
     }
 }
 function renderBaiduIndexTable(data) {
