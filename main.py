@@ -19,6 +19,7 @@ def parse_beijing_time(ts_str):
 # ==================== 配置文件 ====================
 BAIDU_INPUT_FILE = "input.txt"
 XUNYI_MAPPING_FILE = "xunyi_mapping.txt"
+BAIDU_INDEX_KEYWORDS_FILE = "baidu_index_keywords.txt"   # 新增
 HISTORY_FILE = "docs/history.json"
 XUNYI_HISTORY_FILE = "docs/xunyi_history.json"
 DATA_FILE = "docs/data.json"
@@ -69,6 +70,19 @@ def load_xunyi_mapping():
             name, pid = line.split(',', 1)
             mapping[name.strip()] = int(pid.strip())
     return mapping
+
+def load_baidu_index_keywords():
+    """从 txt 读取百度指数关键词列表"""
+    keywords = []
+    if not os.path.exists(BAIDU_INDEX_KEYWORDS_FILE):
+        print(f"警告: 找不到 {BAIDU_INDEX_KEYWORDS_FILE}")
+        return []
+    with open(BAIDU_INDEX_KEYWORDS_FILE, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                keywords.append(line)
+    return keywords
 
 # ==================== 百度送花接口 ====================
 def build_headers(baikeid, name):
@@ -197,7 +211,7 @@ def update_history_general(file_path, current_data_dict, max_points=144):
 
     save_history(file_path, history)
 
-# ==================== 杨博文对比（百度） ====================
+# ==================== 杨博文对比 ====================
 def generate_baidu_compare(current_data_list, history):
     yang = next((item for item in current_data_list if item["name"] == "杨博文"), None)
     if not yang: return None
@@ -314,8 +328,6 @@ def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
             return None
         item = user_indexes[0]
         all_enc = item["all"]["data"]
-        pc_enc = item["pc"]["data"]
-        wise_enc = item["wise"]["data"]
         all_str = decrypt(ptbk, all_enc)
         if not all_str:
             return None
@@ -329,7 +341,10 @@ def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
         return None
 
 def fetch_baidu_index_today():
-    keywords = ["张桂源", "张函瑞", "王橹杰", "左奇函", "陈奕恒", "杨博文", "陈浚明"]
+    keywords = load_baidu_index_keywords()
+    if not keywords:
+        print("百度指数关键词列表为空")
+        return []
     today_str = beijing_now().strftime("%Y-%m-%d")
     results = []
     for kw in keywords:
