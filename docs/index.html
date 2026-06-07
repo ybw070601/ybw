@@ -13,12 +13,16 @@
     <div class="tabs">
         <div class="tab active" data-tab="baidu">🌸 百度送花数据</div>
         <div class="tab" data-tab="xunyi">⭐ 寻艺数据</div>
-        <div class="tab" data-tab="wechat">📈 微信指数</div>
+        <div class="tab" data-tab="baiduindex">📈 百度指数</div>
     </div>
 
-    <!-- ==================== 百度送花内容 ==================== -->
+    <!-- 百度送花内容 -->
     <div id="baidu-tab" class="tab-content active">
         <div id="cardsContainer"></div>
+        <div class="compare-box" id="compareContainer" style="margin-top: 30px;">
+            <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
+            <div id="compareTable">加载中...</div>
+        </div>
         <h3>📋 详细数据表 (点击表头排序)</h3>
         <table class="data-table" id="dataTable">
             <thead>
@@ -26,18 +30,9 @@
             </thead>
             <tbody id="tableBody"><tr><td colspan="5">加载中...<\/td></tr></tbody>
         </table>
-        <div class="footer">
-            <div id="updateTime">等待数据...</div>
-            <div id="nextUpdate">下次更新: 计算中...</div>
-        </div>
-        <!-- 杨博文对比移至最下面 -->
-        <div class="compare-box" id="compareContainer">
-            <h3>📊 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
-            <div id="compareTable">加载中...</div>
-        </div>
     </div>
 
-    <!-- ==================== 寻艺内容 ==================== -->
+    <!-- 寻艺内容 -->
     <div id="xunyi-tab" class="tab-content">
         <div class="rank-card" id="xunyiRankCard">
             <div class="rank-left">
@@ -48,6 +43,10 @@
                 <div class="chart-header" id="xunyiChartDate"></div>
                 <div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div>
             </div>
+        </div>
+        <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
+            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
+            <div id="xunyiCompareTable">加载中...</div>
         </div>
         <h3>📋 详细数据 (点击表头排序)</h3>
         <table class="data-table" id="xunyiTable">
@@ -62,41 +61,34 @@
             </thead>
             <tbody id="xunyiTableBody"></tbody>
         </table>
-        <div class="footer">
-            <div id="xunyiUpdateTime">等待数据...</div>
-            <div id="xunyiNextUpdate">下次更新: 计算中...</div>
-        </div>
-        <!-- 杨博文对比移至最下面 -->
-        <div class="compare-box" id="xunyiCompareContainer">
-            <h3>📊 杨博文 - 寻艺获赞总数对比</h3>
-            <div id="xunyiCompareTable">加载中...</div>
-        </div>
     </div>
 
-    <!-- ==================== 微信指数内容 ==================== -->
-    <div id="wechat-tab" class="tab-content">
-        <h2>📈 微信指数</h2>
-        <table class="data-table" id="wechatTable">
+    <!-- 百度指数内容 -->
+    <div id="baiduindex-tab" class="tab-content">
+        <h3>📋 今日百度指数 (点击表头排序)</h3>
+        <table class="data-table" id="baiduIndexTable">
             <thead>
-                <tr><th data-sort="标识">标识</th><th data-sort="single_score">微信指数</th><th data-sort="role_score">角色微信指数</th><th data-sort="drama_score">我们的少年时代2微信指数</th></tr>
+                <tr><th data-sort="标识">标识</th><th data-sort="score">百度指数</th></tr>
             </thead>
-            <tbody id="wechatTableBody">
-                <tr><td colspan="4">加载中...<\/td></tr>
-            </tbody>
+            <tbody id="baiduIndexTableBody"><tr><td colspan="2">加载中...<\/td></tr></tbody>
         </table>
-        <div class="footer">
-            <div id="wechatUpdateTime">等待数据...</div>
-            <div id="wechatNextUpdate">下次更新: 计算中...</div>
+        <h3>📈 杨博文 - 近15天百度指数趋势</h3>
+        <div class="chart-container" style="height: 400px; margin-bottom: 30px;">
+            <canvas id="yangBaiduIndexChart"></canvas>
         </div>
-        <!-- 杨博文三个折线图 -->
-        <div style="margin-top: 30px;">
-            <h3>📈 杨博文微信指数趋势（近10天）</h3>
-            <div class="rank-card" style="flex-direction: column; padding: 20px;">
-                <div class="chart-container" style="height: 300px;"><canvas id="wechatYangSingleChart"></canvas></div>
-                <div class="chart-container" style="height: 300px; margin-top: 30px;"><canvas id="wechatYangRoleChart"></canvas></div>
-                <div class="chart-container" style="height: 300px; margin-top: 30px;"><canvas id="wechatYangDramaChart"></canvas></div>
-            </div>
-        </div>
+        <h3>📋 杨博文历史数据表</h3>
+        <table class="data-table" id="yangBaiduHistoryTable">
+            <thead>
+                <tr><th>日期</th><th>百度指数</th></tr>
+            </thead>
+            <tbody id="yangBaiduHistoryBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 统一底部 footer -->
+    <div class="footer">
+        <div id="updateTime">等待数据...</div>
+        <div id="nextUpdate">下次更新: 计算中...</div>
     </div>
 </div>
 <div id="watermark" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; background-repeat: repeat; opacity: 0.3; background-size: 320px 200px;"></div>
