@@ -96,7 +96,7 @@ def load_baidu_index_keywords():
 def load_weibo_uids():
     uids = {}
     if not os.path.exists(WEIBO_UID_FILE):
-        print(f"警告: 找不到 {WEIBO_UID_FILE}")
+        print(f"错误: 找不到 {WEIBO_UID_FILE}")
         return uids
     with open(WEIBO_UID_FILE, 'r', encoding='utf-8') as f:
         for line in f:
@@ -107,6 +107,10 @@ def load_weibo_uids():
             if len(parts) == 2:
                 uid, name = parts
                 uids[uid.strip()] = name.strip()
+                print(f"加载微博用户: {name} (UID: {uid})")
+            else:
+                print(f"警告: 无效的行格式: {line}")
+    print(f"共加载 {len(uids)} 个微博用户")
     return uids
 
 # ==================== 百度送花接口 ====================
@@ -408,33 +412,49 @@ def fetch_baidu_index_yang_history():
         return []
 
 # ==================== 微博模块 ====================
-def fetch_weibo_data(uid):
-    """抓取单个用户的微博实时数据"""
+def fetch_weibo_data(uid, retry=2):
+    """抓取单个用户的微博实时数据，增加重试和详细日志"""
     if not WEIBO_COOKIE:
+        print("微博Cookie未设置，跳过抓取")
         return None
     url = f"https://weibo.com/ajax/profile/info?uid={uid}&scene=profile"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0",
         "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
         "Referer": f"https://weibo.com/u/{uid}",
         "Cookie": WEIBO_COOKIE,
         "X-Requested-With": "XMLHttpRequest",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
     }
-    try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json().get('data', {})
-            return {
-                "comment_cnt": int(data.get('comment_cnt', 0)),
-                "repost_cnt": int(data.get('repost_cnt', 0)),
-                "like_cnt": int(data.get('like_cnt', 0)),
-                "total_cnt": int(data.get('total_cnt', 0)),
-                "followers_count": int(data.get('followers_count', 0))
-            }
-        else:
-            print(f"微博数据抓取失败 {uid}: HTTP {resp.status_code}")
-    except Exception as e:
-        print(f"微博数据抓取异常 {uid}: {str(e)}")
+    for attempt in range(retry):
+        try:
+            resp = requests.get(url, headers=headers, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get('ok') == 1 and 'data' in data:
+                    d = data['data']
+                    return {
+                        "comment_cnt": int(d.get('comment_cnt', 0)),
+                        "repost_cnt": int(d.get('repost_cnt', 0)),
+                        "like_cnt": int(d.get('like_cnt', 0)),
+                        "total_cnt": int(d.get('total_cnt', 0)),
+                        "followers_count": int(d.get('followers_count', 0))
+                    }
+                else:
+                    print(f"微博API返回错误: {data.get('msg', '未知错误')}")
+                    return None
+            else:
+                print(f"微博数据抓取失败 {uid}: HTTP {resp.status_code}")
+                if attempt < retry-1:
+                    time.sleep(2)
+        except Exception as e:
+            print(f"微博数据抓取异常 {uid} (尝试 {attempt+1}/{retry}): {str(e)}")
+            if attempt < retry-1:
+                time.sleep(2)
     return None
 
 def init_weibo_daily_snapshot(weibo_uids):
@@ -463,14 +483,19 @@ def init_weibo_daily_snapshot(weibo_uids):
 
 def save_weibo_data(weibo_uids, daily_snapshot):
     """保存今日增量数据和累计数据"""
+    if not weibo_uids:
+        print("没有微博用户数据，跳过保存")
+        return
     current_data = {}
     for uid, name in weibo_uids.items():
-        print(f"[微博实时] 抓取 {name} 数据...")
+        print(f"[微博实时] 抓取 {name} (UID: {uid}) 数据...")
         data = fetch_weibo_data(uid)
         if data:
             current_data[name] = data
+            print(f"  成功: 粉丝{data['followers_count']}, 评论{data['comment_cnt']}, 转发{data['repost_cnt']}, 点赞{data['like_cnt']}, 总数{data['total_cnt']}")
         else:
             current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
+            print(f"  失败，使用默认0值")
         time.sleep(random.uniform(1, 2))
 
     snapshot_data = daily_snapshot.get("data", {})
@@ -494,11 +519,12 @@ def save_weibo_data(weibo_uids, daily_snapshot):
             "total": curr["total_cnt"]
         })
     
+    os.makedirs("docs", exist_ok=True)
     with open(WEIBO_TODAY_FILE, 'w', encoding='utf-8') as f:
         json.dump(today_data, f, ensure_ascii=False, indent=2)
     with open(WEIBO_CUMULATIVE_FILE, 'w', encoding='utf-8') as f:
         json.dump(cumulative_data, f, ensure_ascii=False, indent=2)
-    print("微博数据已保存")
+    print("微博数据已保存到 docs/weibo_today.json 和 docs/weibo_cumulative.json")
 
 # ==================== main ====================
 def main():
