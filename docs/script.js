@@ -82,6 +82,13 @@ function sortByCustomOrder(arr, nameKey = 'name') {
     });
 }
 
+// ==================== 获取北京时间当天日期 (YYYY-MM-DD) ====================
+function getTodayBeijingDate() {
+    const now = new Date();
+    const beijing = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
+    return beijing.toISOString().slice(0,10);
+}
+
 // ==================== 百度送花模块 ====================
 async function loadCompare() {
     try {
@@ -158,10 +165,22 @@ function renderAllCards() {
         document.getElementById('cardsContainer').innerHTML = '<p>暂无历史数据</p>';
         return;
     }
-    let ts = historyData.timestamps;
+    const todayDate = getTodayBeijingDate();
+    const todayIndices = [];
+    const todayTimestamps = [];
+    historyData.timestamps.forEach((ts, idx) => {
+        if (ts.startsWith(todayDate)) {
+            todayIndices.push(idx);
+            todayTimestamps.push(ts);
+        }
+    });
+    if (todayTimestamps.length === 0) {
+        document.getElementById('cardsContainer').innerHTML = '<p>暂无今日数据</p>';
+        return;
+    }
     let series = historyData.series;
     let names = Object.keys(series);
-    let dateStr = getChartDateFromTimestamps(ts);
+    let dateStr = `${parseInt(todayDate.slice(0,4))}年${parseInt(todayDate.slice(5,7))}月${parseInt(todayDate.slice(8,10))}日`;
     let metrics = [
         { key: 'today_gift', title: '🏆 今日送花', unit: '朵', dataKey: 'today_gift', isFloat: false },
         { key: 'today_users', title: '👥 今日人数', unit: '人', dataKey: 'today_users', isFloat: false },
@@ -174,7 +193,8 @@ function renderAllCards() {
         let sorted = latestData ? [...latestData].sort((a,b) => b[metric.dataKey] - a[metric.dataKey]) : [];
         let datasets = [];
         names.forEach(name => {
-            let points = series[name]?.[metric.key] || [];
+            let fullPoints = series[name]?.[metric.key] || [];
+            let points = todayIndices.map(i => fullPoints[i]).filter(v => v !== undefined);
             if (points.length) {
                 datasets.push({
                     label: name,
@@ -222,7 +242,7 @@ function renderAllCards() {
         if (charts[metric.key]) charts[metric.key].destroy();
         charts[metric.key] = new Chart(ctx, {
             type: 'line',
-            data: { labels: ts, datasets: datasets },
+            data: { labels: todayTimestamps, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
@@ -372,12 +392,22 @@ async function loadXunyiHistory() {
 }
 function renderXunyiChart() {
     if (!xunyiHistoryData || !xunyiHistoryData.timestamps || xunyiHistoryData.timestamps.length === 0) return;
-    let timestamps = xunyiHistoryData.timestamps;
+    const todayDate = getTodayBeijingDate();
+    const todayIndices = [];
+    const todayTimestamps = [];
+    xunyiHistoryData.timestamps.forEach((ts, idx) => {
+        if (ts.startsWith(todayDate)) {
+            todayIndices.push(idx);
+            todayTimestamps.push(ts);
+        }
+    });
+    if (todayTimestamps.length === 0) return;
     let series = xunyiHistoryData.series;
     let names = Object.keys(series);
     let datasets = [];
     names.forEach(name => {
-        let points = series[name]?.total_points || [];
+        let fullPoints = series[name]?.total_points || [];
+        let points = todayIndices.map(i => fullPoints[i]).filter(v => v !== undefined);
         if (points.length) {
             datasets.push({
                 label: name,
@@ -392,14 +422,14 @@ function renderXunyiChart() {
             });
         }
     });
-    let dateStr = getChartDateFromTimestamps(timestamps);
+    let dateStr = `${parseInt(todayDate.slice(0,4))}年${parseInt(todayDate.slice(5,7))}月${parseInt(todayDate.slice(8,10))}日`;
     let headerDiv = document.getElementById('xunyiChartDate');
     if (headerDiv) headerDiv.innerHTML = `📅 ${dateStr}`;
     let ctx = document.getElementById('xunyiTrendChart').getContext('2d');
     if (xunyiChart) xunyiChart.destroy();
     xunyiChart = new Chart(ctx, {
         type: 'line',
-        data: { labels: timestamps, datasets: datasets },
+        data: { labels: todayTimestamps, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: true,
