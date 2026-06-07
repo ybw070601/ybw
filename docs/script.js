@@ -38,7 +38,7 @@ function getLightBgColor(n) {
     return h + '66';
 }
 
-// 水印 (更明显)
+// 水印
 (function() {
     let wt = "YBW-裱你咋滴";
     let c = document.createElement('canvas');
@@ -77,6 +77,9 @@ function updateGlobalTimeDisplay() {
 }
 
 // ==================== 百度送花模块 ====================
+async function loadBaiduTableAndCards() {
+    await loadLatest();      // 同时更新表格和卡片
+}
 async function loadCompare() {
     try {
         let r = await fetch('compare_yangbowen.json?_=' + Date.now());
@@ -95,7 +98,7 @@ function renderCompareTable() {
     let da = t.avg - y.avg;
     document.getElementById('compareTable').innerHTML = `
         <table class="compare-table">
-            <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead>
+            <thead><tr><th>指标</th><th>今日(${compareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></td></thead>
             <tbody>
                 <tr><td style="font-weight:bold">今日送花(朵)</td><td>${t.today_gift}</td><td>${y.today_gift}</td><td style="color:${dg>=0?'green':'red'}">${dg}</td></tr>
                 <tr><td style="font-weight:bold">今日人数(人)</td><td>${t.today_users}</td><td>${y.today_users}</td><td style="color:${du>=0?'green':'red'}">${du}</td></tr>
@@ -254,7 +257,6 @@ async function loadLatest() {
         if (!r.ok) throw new Error();
         latestData = await r.json();
         baiduOriginalOrder = latestData.map(item => item.name);
-        // 更新全局最后更新时间
         let historyResp = await fetch('history.json?_=' + Date.now());
         if (historyResp.ok) {
             let hist = await historyResp.json();
@@ -267,16 +269,16 @@ async function loadLatest() {
             globalLastUpdateTimeStr = new Date().toLocaleString();
         }
         updateGlobalTimeDisplay();
-        updateTable();
+        updateBaiduTable();
         updateAllRankLists();
     } catch(e) {
         console.error(e);
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
+        document.getElementById('baiduTableBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
     }
 }
-function updateTable() {
+function updateBaiduTable() {
     if (!latestData) return;
-    let tb = document.getElementById('tableBody');
+    let tb = document.getElementById('baiduTableBody');
     tb.innerHTML = '';
     latestData.forEach(item => {
         let bg = getLightBgColor(item.name), c = getColorForName(item.name);
@@ -319,8 +321,8 @@ function updateAllRankLists() {
         }
     });
 }
-function setupTableSort() {
-    let ths = document.querySelectorAll('#dataTable th');
+function setupBaiduTableSort() {
+    let ths = document.querySelectorAll('#baiduDataTable th');
     ths.forEach(th => {
         th.addEventListener('click', () => {
             let key = th.getAttribute('data-sort');
@@ -331,7 +333,7 @@ function setupTableSort() {
             } else {
                 sorted = [...latestData].sort((a,b) => b[key] - a[key]);
             }
-            let tb = document.getElementById('tableBody');
+            let tb = document.getElementById('baiduTableBody');
             tb.innerHTML = '';
             sorted.forEach(item => {
                 let bg = getLightBgColor(item.name), c = getColorForName(item.name);
@@ -462,7 +464,6 @@ async function loadXunyiLatest() {
             xunyiLatestData = current;
             xunyiOriginalOrder = current.map(item => item.name);
             updateXunyiRankAndTable();
-            // 杨博文对比
             let yang = current.find(i => i.name === '杨博文');
             if (yang && full.timestamps.length > 1) {
                 let yesterday = new Date();
@@ -483,7 +484,8 @@ async function loadXunyiLatest() {
                     document.getElementById('xunyiCompareTable').innerHTML = `
                         <table class="compare-table">
                             <thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead>
-                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>
+                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr>
+                            </tbody>
                         </table>
                     `;
                 } else {
@@ -492,7 +494,6 @@ async function loadXunyiLatest() {
             } else {
                 document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无对比数据</p>';
             }
-            // 寻艺模块不需要单独更新时间，因为全局时间已由百度送花模块更新
         }
     } catch(e) { console.error(e); }
 }
@@ -558,7 +559,6 @@ async function loadBaiduIndex() {
         baiduIndexData = todayData.map(item => ({ name: item.name, score: item.score }));
         baiduIndexOriginalOrder = baiduIndexData.map(item => item.name);
         renderBaiduIndexTable(baiduIndexData);
-        // 加载杨博文历史数据
         let histResp = await fetch('baidu_index_yang_history.json?_=' + Date.now());
         if (histResp.ok) {
             yangBaiduHistoryData = await histResp.json();
@@ -569,7 +569,7 @@ async function loadBaiduIndex() {
         }
     } catch(e) {
         console.error(e);
-        document.getElementById('baiduIndexTableBody').innerHTML = '<tr><td colspan="2">暂无数据</td></tr>';
+        document.getElementById('baiduIndexTableBody').innerHTML = '<td><td colspan="2">暂无数据</td></tr>';
     }
 }
 function renderBaiduIndexTable(data) {
@@ -663,6 +663,9 @@ function initTabs() {
             document.getElementById('baiduindex-tab').classList.remove('active');
             if (target === 'baidu') {
                 document.getElementById('baidu-tab').classList.add('active');
+                // 确保表格和卡片已加载
+                if (!latestData) loadLatest();
+                if (!historyData) loadHistory();
             } else if (target === 'xunyi') {
                 document.getElementById('xunyi-tab').classList.add('active');
                 if (!xunyiHistoryData) loadXunyiHistory();
@@ -681,7 +684,7 @@ window.onload = async () => {
     await loadHistory();
     await loadLatest();
     await loadCompare();
-    setupTableSort();
+    setupBaiduTableSort();
     setInterval(loadLatest, 60000);
     setInterval(loadCompare, 60000);
     setInterval(async () => { await loadHistory(); }, 600000);
@@ -689,9 +692,7 @@ window.onload = async () => {
     await loadXunyiHistory();
     await loadXunyiLatest();
     attachXunyiSortEvents();
-    // 预加载百度指数（不等待，异步）
     loadBaiduIndex();
-    // 定时刷新寻艺最新数据和百度指数（如果当前选项卡激活）
     setInterval(() => {
         if (document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
