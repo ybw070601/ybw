@@ -24,10 +24,8 @@ XUNYI_HISTORY_FILE = "docs/xunyi_history.json"
 DATA_FILE = "docs/data.json"
 COMPARE_FILE = "docs/compare_yangbowen.json"
 XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
-
-# 百度指数相关文件
-BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"      # 当日7人数据
-BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"  # 杨博文15天历史
+BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"
+BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -250,9 +248,7 @@ def generate_xunyi_compare(current_list, history):
     return {"update_time": now.strftime("%Y-%m-%d %H:%M:%S"), "today": {"total_points": yang["total_points"]}, "yesterday": yesterday_data}
 
 # ==================== 百度指数接口 ====================
-# 以下代码参考用户提供的脚本，已适配为函数形式
 def decrypt(ptbk, encrypted_data):
-    """解密百度指数数据"""
     if not ptbk:
         return ""
     n = len(ptbk) // 2
@@ -261,10 +257,6 @@ def decrypt(ptbk, encrypted_data):
     return ''.join(decrypted_data)
 
 def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
-    """
-    抓取单个关键词的百度指数（全部、pc、wise）
-    返回字典包含 dates, all_data, pc_data, wise_data
-    """
     if not BAIDU_INDEX_COOKIE or not BAIDU_INDEX_CIPHER:
         return None
     url = "https://index.baidu.com/api/SearchApi/index"
@@ -287,7 +279,6 @@ def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
         "sec-fetch-site": "same-origin",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.0.0"
     }
-    # 构建请求参数
     params = {
         "area": "0",
         "word": json.dumps([[{"name": keyword, "wordType": 1}]]),
@@ -308,7 +299,6 @@ def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
         if not uniqid:
             print(f"百度指数无 uniqid {keyword}")
             return None
-        # 获取ptbk
         ptbk_url = f"http://index.baidu.com/Interface/ptbk?uniqid={uniqid}"
         ptbk_resp = requests.get(ptbk_url, headers=headers, timeout=10)
         if ptbk_resp.status_code != 200:
@@ -319,49 +309,26 @@ def fetch_baidu_index_for_keyword(keyword, start_date, end_date):
             print(f"ptbk为空 {keyword}")
             return None
 
-        # 解析数据（用户提供的代码中 userIndexes 是一个列表，我们取第一个）
         user_indexes = encrypted_data.get("userIndexes", [])
         if not user_indexes:
             return None
-        item = user_indexes[0]  # 只有一个关键词
-        # 解密 all, pc, wise
+        item = user_indexes[0]
         all_enc = item["all"]["data"]
         pc_enc = item["pc"]["data"]
         wise_enc = item["wise"]["data"]
         all_str = decrypt(ptbk, all_enc)
-        pc_str = decrypt(ptbk, pc_enc)
-        wise_str = decrypt(ptbk, wise_enc)
         if not all_str:
             return None
-        # 解析数值
         all_vals = [int(v) if v else 0 for v in all_str.split(",")]
-        pc_vals = [int(v) if v else 0 for v in pc_str.split(",")] if pc_str else []
-        wise_vals = [int(v) if v else 0 for v in wise_str.split(",")] if wise_str else []
-        # 生成日期列表
         start = datetime.strptime(start_date, "%Y-%m-%d")
         end = datetime.strptime(end_date, "%Y-%m-%d")
         dates = [(start + timedelta(days=i)).strftime("%Y-%m-%d") for i in range((end - start).days + 1)]
-        # 确保长度一致
-        if len(all_vals) != len(dates):
-            print(f"数据长度不一致 {keyword}: {len(all_vals)} vs {len(dates)}")
-            # 截断或补齐？一般不会出现，但以防万一
-            min_len = min(len(all_vals), len(dates))
-            dates = dates[:min_len]
-            all_vals = all_vals[:min_len]
-            pc_vals = pc_vals[:min_len] if pc_vals else []
-            wise_vals = wise_vals[:min_len] if wise_vals else []
-        return {
-            "dates": dates,
-            "all": all_vals,
-            "pc": pc_vals,
-            "wise": wise_vals
-        }
+        return {"dates": dates, "all": all_vals}
     except Exception as e:
         print(f"百度指数抓取异常 {keyword}: {str(e)}")
         return None
 
 def fetch_baidu_index_today():
-    """获取7个人当天的百度指数（全部）"""
     keywords = ["张桂源", "张函瑞", "王橹杰", "左奇函", "陈奕恒", "杨博文", "陈浚明"]
     today_str = beijing_now().strftime("%Y-%m-%d")
     results = []
@@ -377,16 +344,13 @@ def fetch_baidu_index_today():
     return results
 
 def fetch_baidu_index_yang_history():
-    """获取杨博文最近15天的百度指数（全部）"""
     keyword = "杨博文"
     end_date = beijing_now().strftime("%Y-%m-%d")
     start_date = (beijing_now() - timedelta(days=14)).strftime("%Y-%m-%d")
     print(f"[百度指数] 抓取杨博文历史数据 {start_date} 至 {end_date}")
     data = fetch_baidu_index_for_keyword(keyword, start_date, end_date)
     if data:
-        # 返回包含日期和指数的列表
-        history_list = [{"date": d, "score": v} for d, v in zip(data["dates"], data["all"])]
-        return history_list
+        return [{"date": d, "score": v} for d, v in zip(data["dates"], data["all"])]
     else:
         return []
 
@@ -430,13 +394,11 @@ def main():
 
     # 百度指数
     if BAIDU_INDEX_COOKIE and BAIDU_INDEX_CIPHER:
-        # 当日数据
         today_data = fetch_baidu_index_today()
         if today_data:
             with open(BAIDU_INDEX_TODAY_FILE, 'w', encoding='utf-8') as f:
                 json.dump(today_data, f, ensure_ascii=False, indent=2)
             print("百度指数当日数据已更新")
-        # 杨博文15天历史
         yang_history = fetch_baidu_index_yang_history()
         if yang_history:
             with open(BAIDU_INDEX_YANG_HISTORY_FILE, 'w', encoding='utf-8') as f:
