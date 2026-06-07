@@ -21,7 +21,6 @@ def parse_beijing_time(ts_str):
 BAIDU_INPUT_FILE = "input.txt"
 XUNYI_MAPPING_FILE = "xunyi_mapping.txt"
 BAIDU_INDEX_KEYWORDS_FILE = "baidu_index_keywords.txt"
-WEIBO_UID_FILE = "weibouid.txt"
 
 HISTORY_FILE = "docs/history.json"
 XUNYI_HISTORY_FILE = "docs/xunyi_history.json"
@@ -30,9 +29,6 @@ COMPARE_FILE = "docs/compare_yangbowen.json"
 XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
 BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"
 BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"
-WEIBO_DAILY_SNAPSHOT_FILE = "docs/weibo_daily_snapshot.json"
-WEIBO_TODAY_FILE = "docs/weibo_today.json"
-WEIBO_CUMULATIVE_FILE = "docs/weibo_cumulative.json"
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -49,11 +45,6 @@ BAIDU_INDEX_COOKIE = os.environ.get("BAIDU_INDEX_COOKIE", "")
 BAIDU_INDEX_CIPHER = os.environ.get("BAIDU_INDEX_CIPHER", "")
 if not BAIDU_INDEX_COOKIE or not BAIDU_INDEX_CIPHER:
     print("警告: 未设置 BAIDU_INDEX_COOKIE 或 BAIDU_INDEX_CIPHER，百度指数将跳过")
-
-# 微博Cookie
-WEIBO_COOKIE = os.environ.get("WEIBO_COOKIE", "")
-if not WEIBO_COOKIE:
-    print("警告: 未设置 WEIBO_COOKIE，微博数据将跳过")
 
 # ==================== 读取数据 ====================
 def load_baidu_tasks():
@@ -93,26 +84,6 @@ def load_baidu_index_keywords():
             if line:
                 keywords.append(line)
     return keywords
-
-def load_weibo_uids():
-    uids = {}
-    if not os.path.exists(WEIBO_UID_FILE):
-        print(f"错误: 找不到 {WEIBO_UID_FILE}")
-        return uids
-    with open(WEIBO_UID_FILE, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            parts = line.split(',')
-            if len(parts) == 2:
-                uid, name = parts
-                uids[uid.strip()] = name.strip()
-                print(f"加载微博用户: {name} (UID: {uid})")
-            else:
-                print(f"警告: 无效的行格式: {line}")
-    print(f"共加载 {len(uids)} 个微博用户")
-    return uids
 
 # ==================== 百度送花接口 ====================
 def build_headers(baikeid, name):
@@ -410,140 +381,6 @@ def fetch_baidu_index_yang_history():
     else:
         return []
 
-# ==================== 微博模块（最终调试版） ====================
-def fetch_weibo_data(uid, retry=2):
-    """抓取单个用户的微博实时数据，打印详细响应便于调试"""
-    if not WEIBO_COOKIE:
-        print("微博Cookie未设置，跳过抓取")
-        return None
-
-    url = f"https://weibo.com/ajax/profile/info?uid={uid}&scene=profile"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "zh-CN,zh;q=0.9",
-        "Referer": "https://weibo.com/",
-        "Cookie": WEIBO_COOKIE,
-        "X-Requested-With": "XMLHttpRequest",
-        "Connection": "keep-alive",
-    }
-
-    for attempt in range(retry):
-        try:
-            resp = requests.get(url, headers=headers, timeout=10)
-            print(f"  请求 {uid} 状态码: {resp.status_code}")
-            if resp.status_code == 200:
-                print(f"  响应内容片段: {resp.text[:300]}")
-                data = resp.json()
-                if 'data' in data and 'user' in data['data']:
-                    user = data['data']['user']
-                    status_total_counter = user.get('status_total_counter', {})
-                    return {
-                        "comment_cnt": int(status_total_counter.get('comment_cnt', 0)),
-                        "repost_cnt": int(status_total_counter.get('repost_cnt', 0)),
-                        "like_cnt": int(status_total_counter.get('like_cnt', 0)),
-                        "total_cnt": int(status_total_counter.get('total_cnt', 0)),
-                        "followers_count": int(user.get('followers_count', 0))
-                    }
-                else:
-                    print(f"  响应结构异常，完整响应: {resp.text}")
-                    return None
-            elif resp.status_code == 403:
-                print("  访问被拒绝（403），请检查Cookie是否有效")
-                return None
-            else:
-                print(f"  微博数据抓取失败 {uid}: HTTP {resp.status_code}")
-                if attempt < retry - 1:
-                    time.sleep(1)
-        except Exception as e:
-            print(f"  微博数据抓取异常 {uid} (尝试 {attempt+1}/{retry}): {str(e)}")
-            if attempt < retry - 1:
-                time.sleep(1)
-    return None
-
-def init_weibo_daily_snapshot_concurrent(weibo_uids):
-    snapshot = {}
-    if os.path.exists(WEIBO_DAILY_SNAPSHOT_FILE):
-        with open(WEIBO_DAILY_SNAPSHOT_FILE, 'r', encoding='utf-8') as f:
-            snapshot = json.load(f)
-    today_str = beijing_now().strftime("%Y-%m-%d")
-    if snapshot.get("date") != today_str:
-        print("当天0点快照不存在或已过期，开始并发抓取...")
-        current_data = {}
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            future_to_uid = {executor.submit(fetch_weibo_data, uid): (uid, name) for uid, name in weibo_uids.items()}
-            for future in as_completed(future_to_uid):
-                uid, name = future_to_uid[future]
-                try:
-                    data = future.result()
-                    if data:
-                        current_data[name] = data
-                        print(f"  快照 {name} 成功")
-                    else:
-                        current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
-                        print(f"  快照 {name} 失败")
-                except Exception as e:
-                    print(f"  快照 {name} 异常: {e}")
-                    current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
-        snapshot = {"date": today_str, "data": current_data}
-        with open(WEIBO_DAILY_SNAPSHOT_FILE, 'w', encoding='utf-8') as f:
-            json.dump(snapshot, f, ensure_ascii=False, indent=2)
-        print("当天0点快照已更新")
-    return snapshot
-
-def save_weibo_data_concurrent(weibo_uids, daily_snapshot):
-    if not weibo_uids:
-        print("没有微博用户数据，跳过保存")
-        return
-    current_data = {}
-    success_count = 0
-    print("[微博实时] 开始并发抓取...")
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        future_to_uid = {executor.submit(fetch_weibo_data, uid): (uid, name) for uid, name in weibo_uids.items()}
-        for future in as_completed(future_to_uid):
-            uid, name = future_to_uid[future]
-            try:
-                data = future.result()
-                if data:
-                    current_data[name] = data
-                    success_count += 1
-                    print(f"  {name} 成功: 粉丝{data['followers_count']}")
-                else:
-                    current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
-                    print(f"  {name} 失败")
-            except Exception as e:
-                print(f"  {name} 异常: {e}")
-                current_data[name] = {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0, "followers_count":0}
-    print(f"微博抓取完成，成功 {success_count}/{len(weibo_uids)} 个用户")
-
-    snapshot_data = daily_snapshot.get("data", {})
-    today_data = []
-    cumulative_data = []
-    for name, curr in current_data.items():
-        base = snapshot_data.get(name, {"comment_cnt":0, "repost_cnt":0, "like_cnt":0, "total_cnt":0})
-        today_data.append({
-            "name": name,
-            "comment_inc": curr["comment_cnt"] - base["comment_cnt"],
-            "repost_inc": curr["repost_cnt"] - base["repost_cnt"],
-            "like_inc": curr["like_cnt"] - base["like_cnt"],
-            "total_inc": curr["total_cnt"] - base["total_cnt"]
-        })
-        cumulative_data.append({
-            "name": name,
-            "followers_count": curr["followers_count"],
-            "comment": curr["comment_cnt"],
-            "repost": curr["repost_cnt"],
-            "like": curr["like_cnt"],
-            "total": curr["total_cnt"]
-        })
-    
-    os.makedirs("docs", exist_ok=True)
-    with open(WEIBO_TODAY_FILE, 'w', encoding='utf-8') as f:
-        json.dump(today_data, f, ensure_ascii=False, indent=2)
-    with open(WEIBO_CUMULATIVE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(cumulative_data, f, ensure_ascii=False, indent=2)
-    print("微博数据已保存")
-
 # ==================== 并发抓取函数 ====================
 def fetch_all_baidu_data_concurrent(tasks):
     results = []
@@ -581,7 +418,6 @@ def main():
     
     # 1. 百度送花（并发）
     baidu_tasks = load_baidu_tasks()
-    baidu_results = []
     if baidu_tasks:
         print(f"百度送花 {len(baidu_tasks)} 个，开始并发抓取...")
         baidu_results = fetch_all_baidu_data_concurrent(baidu_tasks)
@@ -597,7 +433,6 @@ def main():
 
     # 2. 寻艺（并发）
     xunyi_mapping = load_xunyi_mapping()
-    xunyi_results = []
     if xunyi_mapping:
         print(f"寻艺 {len(xunyi_mapping)} 个，开始并发抓取...")
         xunyi_results = fetch_all_xunyi_data_concurrent(xunyi_mapping)
@@ -632,18 +467,6 @@ def main():
             print("百度指数关键词列表为空")
     else:
         print("百度指数凭证缺失，跳过")
-
-    # 4. 微博
-    if WEIBO_COOKIE:
-        weibo_uids = load_weibo_uids()
-        if weibo_uids:
-            print(f"共加载 {len(weibo_uids)} 个微博用户")
-            daily_snapshot = init_weibo_daily_snapshot_concurrent(weibo_uids)
-            save_weibo_data_concurrent(weibo_uids, daily_snapshot)
-        else:
-            print("未找到微博用户数据，跳过")
-    else:
-        print("微博Cookie缺失，跳过")
 
     elapsed = time.time() - start_time
     print(f"所有数据更新完成，总耗时: {elapsed:.2f} 秒")
