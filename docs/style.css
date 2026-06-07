@@ -47,3 +47,17 @@ canvas { width: 100% !important; height: 100% !important; }
     .rank-right .chart-container { height: 260px; }
     .rank-gap { width: auto; }
 }
+
+/* 修复百度指数表格列宽错位 */
+#baiduIndexTable {
+    table-layout: fixed;
+    width: 100%;
+}
+#baiduIndexTable th:first-child,
+#baiduIndexTable td:first-child {
+    width: 80px;
+}
+#baiduIndexTable th:last-child,
+#baiduIndexTable td:last-child {
+    width: auto;
+}
