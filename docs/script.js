@@ -462,3 +462,219 @@ function xunyiSortHandler(e){
     }
     renderXunyiTable(sorted);
 }
+// ==================== 微信指数模块 ====================
+let wechatTableData = [];           // 存储表格数据 { name, single_score, role_score, drama_score }
+let wechatOriginalOrder = [];       // 原始顺序（按名字）
+let wechatHistoryData = null;       // 存储 wechat_history.json 数据
+let wechatCharts = {};
+
+async function loadWechatIndex() {
+    try {
+        // 加载表格数据
+        let resp = await fetch('wechat_index.json?_=' + Date.now());
+        if (!resp.ok) throw new Error();
+        let tableData = await resp.json();
+        wechatTableData = tableData;  // 格式 [{name, single_score, role_score, drama_score, date, status}]
+        wechatOriginalOrder = wechatTableData.map(item => item.name);
+        renderWechatTable(wechatTableData);
+        
+        // 加载历史数据（用于杨博文折线图）
+        let historyResp = await fetch('wechat_history.json?_=' + Date.now());
+        if (historyResp.ok) {
+            wechatHistoryData = await historyResp.json();
+            renderWechatYangCharts();
+        } else {
+            console.warn('微信指数历史数据加载失败');
+        }
+        
+        // 更新时间显示
+        let lastTime = wechatTableData[0]?.date || new Date().toLocaleString();
+        document.getElementById('wechatUpdateTime').innerHTML = `📅 最后更新: ${lastTime}`;
+        let nextTime = getNextUpdateTimeFromLast(lastTime);
+        document.getElementById('wechatNextUpdate').innerHTML = `⏰ 预计下次更新: ${nextTime}`;
+    } catch(e) {
+        console.error(e);
+        document.getElementById('wechatTableBody').innerHTML = '<tr><td colspan="4">暂无数据，请等待定时任务执行</td></tr>';
+    }
+}
+
+function renderWechatTable(data) {
+    let tbody = document.getElementById('wechatTableBody');
+    tbody.innerHTML = '';
+    data.forEach(item => {
+        let bgColor = getLightBgColor(item.name);
+        let colorCircle = getColorForName(item.name);
+        let row = tbody.insertRow();
+        row.style.backgroundColor = bgColor;
+        let cell0 = row.insertCell(0);
+        cell0.innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.name}"></div>`;
+        let cell1 = row.insertCell(1);
+        cell1.textContent = item.single_score.toLocaleString();
+        let cell2 = row.insertCell(2);
+        cell2.textContent = item.role_score.toLocaleString();
+        let cell3 = row.insertCell(3);
+        cell3.textContent = item.drama_score.toLocaleString();
+    });
+    // 绑定排序事件
+    attachWechatSortEvents();
+}
+
+function attachWechatSortEvents() {
+    let headers = document.querySelectorAll('#wechatTable th');
+    headers.forEach(th => {
+        th.removeEventListener('click', wechatSortHandler);
+        th.addEventListener('click', wechatSortHandler);
+    });
+}
+function wechatSortHandler(e) {
+    let th = e.target.closest('th');
+    if (!th) return;
+    let field = th.getAttribute('data-sort');
+    if (!field) return;
+    let sorted;
+    if (field === '标识') {
+        sorted = wechatOriginalOrder.map(name => wechatTableData.find(item => item.name === name));
+    } else {
+        sorted = [...wechatTableData].sort((a, b) => b[field] - a[field]);
+    }
+    renderWechatTable(sorted);
+}
+
+function renderWechatYangCharts() {
+    if (!wechatHistoryData || !wechatHistoryData.timestamps || wechatHistoryData.timestamps.length === 0) return;
+    let timestamps = wechatHistoryData.timestamps;
+    let series = wechatHistoryData.series;  // { single: [], role: [], drama: [] }
+    
+    // 只显示最近10个点（与后端一致）
+    let labels = timestamps.map(ts => {
+        let parts = ts.split(' ');
+        return parts[0] + '\n' + parts[1];  // 显示日期+时间
+    });
+    
+    // 三个数据集
+    const datasetsSingle = [{
+        label: '杨博文',
+        data: series.single,
+        borderColor: getColorForName('杨博文'),
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.2,
+        fill: false
+    }];
+    const datasetsRole = [{
+        label: '杨博文 周扬',
+        data: series.role,
+        borderColor: getColorForName('杨博文'),  // 使用杨博文颜色
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.2,
+        fill: false
+    }];
+    const datasetsDrama = [{
+        label: '杨博文 我们的少年时代2',
+        data: series.drama,
+        borderColor: getColorForName('杨博文'),
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        tension: 0.2,
+        fill: false
+    }];
+    
+    // 创建三个折线图
+    let ctx1 = document.getElementById('wechatYangSingleChart').getContext('2d');
+    if (wechatCharts.single) wechatCharts.single.destroy();
+    wechatCharts.single = new Chart(ctx1, {
+        type: 'line',
+        data: { labels: labels, datasets: datasetsSingle },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, itemSort: (a,b)=>b.parsed.y-a.parsed.y } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: '微信指数' } }, x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 10 } } }
+        }
+    });
+    let ctx2 = document.getElementById('wechatYangRoleChart').getContext('2d');
+    if (wechatCharts.role) wechatCharts.role.destroy();
+    wechatCharts.role = new Chart(ctx2, {
+        type: 'line',
+        data: { labels: labels, datasets: datasetsRole },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, itemSort: (a,b)=>b.parsed.y-a.parsed.y } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: '微信指数' } }, x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 10 } } }
+        }
+    });
+    let ctx3 = document.getElementById('wechatYangDramaChart').getContext('2d');
+    if (wechatCharts.drama) wechatCharts.drama.destroy();
+    wechatCharts.drama = new Chart(ctx3, {
+        type: 'line',
+        data: { labels: labels, datasets: datasetsDrama },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, itemSort: (a,b)=>b.parsed.y-a.parsed.y } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: '微信指数' } }, x: { ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 10 } } }
+        }
+    });
+}
+
+// ==================== 选项卡切换 ====================
+function initTabs() {
+    document.querySelectorAll('.tab').forEach(t => {
+        t.addEventListener('click', () => {
+            let target = t.getAttribute('data-tab');
+            document.querySelectorAll('.tab').forEach(tt => tt.classList.remove('active'));
+            t.classList.add('active');
+            document.getElementById('baidu-tab').classList.remove('active');
+            document.getElementById('xunyi-tab').classList.remove('active');
+            document.getElementById('wechat-tab').classList.remove('active');
+            if (target === 'baidu') {
+                document.getElementById('baidu-tab').classList.add('active');
+            } else if (target === 'xunyi') {
+                document.getElementById('xunyi-tab').classList.add('active');
+                if (!xunyiHistoryData) loadXunyiHistory();
+                else { updateXunyiRankAndTable(); }
+                loadXunyiLatest();
+            } else if (target === 'wechat') {
+                document.getElementById('wechat-tab').classList.add('active');
+                loadWechatIndex();
+            }
+        });
+    });
+}
+
+// ==================== 页面初始化 ====================
+window.onload = async () => {
+    await loadHistory();
+    await loadLatest();
+    await loadCompare();
+    setupTableSort();
+    setInterval(loadLatest, 60000);
+    setInterval(loadCompare, 60000);
+    setInterval(async () => { await loadHistory(); }, 600000);
+    initTabs();
+    // 预加载寻艺和微信指数（但不自动刷新，仅在切换时）
+    await loadXunyiHistory();
+    await loadXunyiLatest();
+    attachXunyiSortEvents();
+    // 微信指数在切换时加载，但为了预加载数据，可以提前加载一次（不会影响性能）
+    loadWechatIndex();
+    // 定时更新寻艺下次更新时间显示
+    setInterval(() => {
+        if (document.getElementById('xunyi-tab').classList.contains('active')) {
+            loadXunyiLatest();
+        }
+    }, 60000);
+    setInterval(() => {
+        if (document.getElementById('wechat-tab').classList.contains('active')) {
+            loadWechatIndex();
+        }
+    }, 60000);
+};
