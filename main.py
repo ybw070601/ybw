@@ -410,25 +410,31 @@ def fetch_baidu_index_yang_history():
     else:
         return []
 
-# ==================== 微博模块（修正解析路径） ====================
+# ==================== 微博模块（最终调试版） ====================
 def fetch_weibo_data(uid, retry=2):
-    """抓取单个用户的微博实时数据，模仿Java代码的解析方式"""
+    """抓取单个用户的微博实时数据，打印详细响应便于调试"""
     if not WEIBO_COOKIE:
         print("微博Cookie未设置，跳过抓取")
         return None
-    
+
     url = f"https://weibo.com/ajax/profile/info?uid={uid}&scene=profile"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Referer": "https://weibo.com/",
         "Cookie": WEIBO_COOKIE,
+        "X-Requested-With": "XMLHttpRequest",
+        "Connection": "keep-alive",
     }
-    
+
     for attempt in range(retry):
         try:
             resp = requests.get(url, headers=headers, timeout=10)
+            print(f"  请求 {uid} 状态码: {resp.status_code}")
             if resp.status_code == 200:
+                print(f"  响应内容片段: {resp.text[:300]}")
                 data = resp.json()
-                # 正确的路径: data.user.status_total_counter
                 if 'data' in data and 'user' in data['data']:
                     user = data['data']['user']
                     status_total_counter = user.get('status_total_counter', {})
@@ -440,10 +446,10 @@ def fetch_weibo_data(uid, retry=2):
                         "followers_count": int(user.get('followers_count', 0))
                     }
                 else:
-                    print(f"  微博API返回结构异常: {data.get('msg', '未知错误')}")
+                    print(f"  响应结构异常，完整响应: {resp.text}")
                     return None
             elif resp.status_code == 403:
-                print("  访问被拒绝（403），Cookie可能已过期或IP被限制")
+                print("  访问被拒绝（403），请检查Cookie是否有效")
                 return None
             else:
                 print(f"  微博数据抓取失败 {uid}: HTTP {resp.status_code}")
