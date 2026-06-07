@@ -82,11 +82,10 @@ function sortByCustomOrder(arr, nameKey = 'name') {
     });
 }
 
-// ==================== 获取北京时间当天日期 (YYYY-MM-DD) ====================
+// ==================== 获取北京时间当天日期 (YYYY-MM-DD) - 修复版 ====================
 function getTodayBeijingDate() {
-    const now = new Date();
-    const beijing = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Shanghai" }));
-    return beijing.toISOString().slice(0,10);
+    // 使用 'en-CA' locale 直接得到 YYYY-MM-DD 格式，并指定北京时区
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
 }
 
 // ==================== 百度送花模块 ====================
@@ -401,7 +400,15 @@ function renderXunyiChart() {
             todayTimestamps.push(ts);
         }
     });
-    if (todayTimestamps.length === 0) return;
+    if (todayTimestamps.length === 0) {
+        // 没有今日数据时，清空画布并显示提示
+        const ctx = document.getElementById('xunyiTrendChart').getContext('2d');
+        if (xunyiChart) xunyiChart.destroy();
+        document.getElementById('xunyiChartDate').innerHTML = '📅 暂无今日数据';
+        // 可选：清空画布
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+    }
     let series = xunyiHistoryData.series;
     let names = Object.keys(series);
     let datasets = [];
@@ -731,7 +738,8 @@ async function loadWeiboData() {
 }
 
 function processWeiboData(data) {
-    const todayBeijing = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }).replace(/\//g, '-');
+    // 使用与折线图相同的日期获取方式
+    const todayBeijing = getTodayBeijingDate();
     const dataDate = data.date;
     const isToday = (dataDate === todayBeijing);
     const baseline = data.baseline || {};
