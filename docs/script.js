@@ -30,7 +30,7 @@ const colorMap = {
     "左齐函": "#10319f",
     "陈奕恒": "#9b59b6",
     "杨博文": "#F4A9AA",
-    "陈浚明": "#E60012"
+    "陈浚铭": "#E60012"
 };
 function getColorForName(n) { return colorMap[n] || `hsl(${Math.abs(n.length * 37) % 360}, 70%, 55%)`; }
 function getLightBgColor(n) {
