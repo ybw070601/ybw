@@ -28,8 +28,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git config --global http.postBuffer 524288000
-          # 拉取远程更新并变基，解决冲突
-          git pull --rebase origin main || true
+          # 添加所有更改
           git add docs/*.json docs/*.html docs/*.css docs/*.js
-          git diff --quiet && git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
+          # 如果有更改则提交
+          git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
+          # 拉取远程并变基，避免合并提交
+          git pull --rebase origin main || true
+          # 再次添加可能新产生的文件
+          git add docs/*.json docs/*.html docs/*.css docs/*.js
+          git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
           git push origin main
