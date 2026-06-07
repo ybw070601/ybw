@@ -15,7 +15,7 @@ let yangBaiduChart = null;
 // 统一更新时间显示
 let globalLastUpdateTimeStr = '';
 
-// 颜色映射 (陈奕恒紫色)
+// 颜色映射
 const colorMap = {
     "张桂源": "#F9E511",
     "张函瑞": "#779649",
@@ -24,7 +24,7 @@ const colorMap = {
     "左齐函": "#10319f",
     "陈奕恒": "#9b59b6",
     "杨博文": "#F4A9AA",
-    "陈浚明": "#E60012"
+    "陈浚铭": "#E60012"
 };
 function getColorForName(n) { return colorMap[n] || `hsl(${Math.abs(n.length * 37) % 360}, 70%, 55%)`; }
 function getLightBgColor(n) {
