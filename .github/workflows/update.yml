@@ -1,4 +1,4 @@
-name: 每10分钟抓取数据（百度送花+寻艺+百度指数+微博）
+name: 每10分钟抓取数据（百度送花+寻艺+百度指数）
 
 on:
   schedule:
@@ -21,20 +21,15 @@ jobs:
           BAIDU_COOKIE: ${{ secrets.BAIDU_COOKIE }}
           BAIDU_INDEX_COOKIE: ${{ secrets.BAIDU_INDEX_COOKIE }}
           BAIDU_INDEX_CIPHER: ${{ secrets.BAIDU_INDEX_CIPHER }}
-          WEIBO_COOKIE: ${{ secrets.WEIBO_COOKIE }}
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git config --global http.postBuffer 524288000
-          # 添加所有更改
           git add docs/*.json docs/*.html docs/*.css docs/*.js
-          # 如果有更改则提交
           git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
-          # 拉取远程并变基，避免合并提交
           git pull --rebase origin main || true
-          # 再次添加可能新产生的文件
           git add docs/*.json docs/*.html docs/*.css docs/*.js
           git diff --staged --quiet || git commit -m "自动更新数据 $(date +'%Y-%m-%d %H:%M:%S')"
           git push origin main
