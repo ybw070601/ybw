@@ -52,7 +52,7 @@ canvas { width: 100% !important; height: 100% !important; }
 #baiduIndexTable th:first-child, #baiduIndexTable td:first-child { width: 50%; }
 #baiduIndexTable th:last-child, #baiduIndexTable td:last-child { width: 50%; }
 
-/* 微博排名卡片网格布局 */
+/* 微博排名卡片网格布局 - 无滚动条 */
 .rankings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -70,8 +70,9 @@ canvas { width: 100% !important; height: 100% !important; }
 .rank-card-no-chart .rank-left {
     padding: 20px;
     background: #fafcfd;
-    max-height: 400px;
-    overflow-y: auto;
+    /* 移除最大高度和滚动条，让所有内容完整显示 */
+    max-height: none;
+    overflow-y: visible;
 }
 .rank-card-no-chart .rank-left h3 {
     margin-top: 0;
