@@ -82,10 +82,22 @@ function sortByCustomOrder(arr, nameKey = 'name') {
     });
 }
 
-// ==================== 获取北京时间当天日期 (YYYY-MM-DD) - 修复版 ====================
+// ==================== 获取北京时间当天日期 (YYYY-MM-DD) ====================
 function getTodayBeijingDate() {
-    // 使用 'en-CA' locale 直接得到 YYYY-MM-DD 格式，并指定北京时区
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
+}
+
+// ==================== 微博数值格式化（万/亿，两位小数） ====================
+function formatNumberToWanOrYi(num) {
+    if (num === undefined || num === null) return '0';
+    const absNum = Math.abs(num);
+    if (absNum >= 1e8) {
+        return (num / 1e8).toFixed(2) + '亿';
+    } else if (absNum >= 1e4) {
+        return (num / 1e4).toFixed(2) + '万';
+    } else {
+        return (num / 1e4).toFixed(2) + '万';
+    }
 }
 
 // ==================== 百度送花模块 ====================
@@ -401,11 +413,9 @@ function renderXunyiChart() {
         }
     });
     if (todayTimestamps.length === 0) {
-        // 没有今日数据时，清空画布并显示提示
         const ctx = document.getElementById('xunyiTrendChart').getContext('2d');
         if (xunyiChart) xunyiChart.destroy();
         document.getElementById('xunyiChartDate').innerHTML = '📅 暂无今日数据';
-        // 可选：清空画布
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
@@ -530,7 +540,8 @@ async function loadXunyiLatest() {
                     document.getElementById('xunyiCompareTable').innerHTML = `
                         <table class="compare-table">
                             <thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead>
-                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr></tbody>
+                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr>
+                            </tbody>
                         </table>
                     `;
                 } else {
@@ -730,15 +741,16 @@ async function loadWeiboData() {
         renderWeiboIncrementTable(weiboIncrementList);
         renderWeiboTotalTable(weiboTotalList);
         attachWeiboSortEvents();
+        renderWeiboRankings();
     } catch(e) {
         console.error('微博数据错误:', e);
         document.getElementById('weiboIncrementBody').innerHTML = '<tr><td colspan="5">暂无数据</td></tr>';
         document.getElementById('weiboTotalBody').innerHTML = '<tr><td colspan="6">暂无数据</td></tr>';
+        document.getElementById('weiboRankingsContainer').innerHTML = '<p>暂无数据</p>';
     }
 }
 
 function processWeiboData(data) {
-    // 使用与折线图相同的日期获取方式
     const todayBeijing = getTodayBeijingDate();
     const dataDate = data.date;
     const isToday = (dataDate === todayBeijing);
@@ -790,10 +802,10 @@ function renderWeiboIncrementTable(data) {
         const row = tbody.insertRow();
         row.style.backgroundColor = bgColor;
         row.insertCell(0).innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.name}"></div>`;
-        row.insertCell(1).textContent = item.comment_inc.toLocaleString();
-        row.insertCell(2).textContent = item.repost_inc.toLocaleString();
-        row.insertCell(3).textContent = item.like_inc.toLocaleString();
-        row.insertCell(4).textContent = item.total_inc.toLocaleString();
+        row.insertCell(1).textContent = formatNumberToWanOrYi(item.comment_inc);
+        row.insertCell(2).textContent = formatNumberToWanOrYi(item.repost_inc);
+        row.insertCell(3).textContent = formatNumberToWanOrYi(item.like_inc);
+        row.insertCell(4).textContent = formatNumberToWanOrYi(item.total_inc);
     });
 }
 
@@ -807,11 +819,11 @@ function renderWeiboTotalTable(data) {
         const row = tbody.insertRow();
         row.style.backgroundColor = bgColor;
         row.insertCell(0).innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.name}"></div>`;
-        row.insertCell(1).textContent = item.followers.toLocaleString();
-        row.insertCell(2).textContent = item.comment.toLocaleString();
-        row.insertCell(3).textContent = item.repost.toLocaleString();
-        row.insertCell(4).textContent = item.like.toLocaleString();
-        row.insertCell(5).textContent = item.total.toLocaleString();
+        row.insertCell(1).textContent = formatNumberToWanOrYi(item.followers);
+        row.insertCell(2).textContent = formatNumberToWanOrYi(item.comment);
+        row.insertCell(3).textContent = formatNumberToWanOrYi(item.repost);
+        row.insertCell(4).textContent = formatNumberToWanOrYi(item.like);
+        row.insertCell(5).textContent = formatNumberToWanOrYi(item.total);
     });
 }
 
@@ -852,6 +864,59 @@ function attachWeiboSortEvents() {
     });
 }
 
+// 新增：生成9个排名卡片（无折线图）
+function renderWeiboRankings() {
+    const container = document.getElementById('weiboRankingsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const metrics = [
+        { title: '🏆 粉丝数排名', dataList: weiboTotalList, valueKey: 'followers' },
+        { title: '📝 评论总数排名', dataList: weiboTotalList, valueKey: 'comment' },
+        { title: '🔄 转发总数排名', dataList: weiboTotalList, valueKey: 'repost' },
+        { title: '❤️ 点赞总数排名', dataList: weiboTotalList, valueKey: 'like' },
+        { title: '⭐ 转赞评总数排名', dataList: weiboTotalList, valueKey: 'total' },
+        { title: '📈 评论增量排名', dataList: weiboIncrementList, valueKey: 'comment_inc' },
+        { title: '📈 转发增量排名', dataList: weiboIncrementList, valueKey: 'repost_inc' },
+        { title: '📈 点赞增量排名', dataList: weiboIncrementList, valueKey: 'like_inc' },
+        { title: '📈 转赞评增量总数排名', dataList: weiboIncrementList, valueKey: 'total_inc' }
+    ];
+
+    metrics.forEach(metric => {
+        const sorted = [...metric.dataList].sort((a, b) => b[metric.valueKey] - a[metric.valueKey]);
+        if (sorted.length === 0) return;
+
+        const card = document.createElement('div');
+        card.className = 'rank-card-no-chart';
+        const rankLeft = document.createElement('div');
+        rankLeft.className = 'rank-left';
+        rankLeft.innerHTML = `<h3>${metric.title}</h3><ul class="rank-list" id="rank-list-${metric.valueKey}"></ul>`;
+        card.appendChild(rankLeft);
+        container.appendChild(card);
+
+        const rankUl = rankLeft.querySelector('.rank-list');
+        sorted.forEach((item, idx) => {
+            const value = item[metric.valueKey];
+            const formattedValue = formatNumberToWanOrYi(value);
+            const prev = idx > 0 ? sorted[idx-1][metric.valueKey] : null;
+            let gap = '—';
+            if (idx > 0 && prev !== null) {
+                const diff = prev - value;
+                const formattedDiff = formatNumberToWanOrYi(diff);
+                gap = `-${formattedDiff}`;
+            }
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="rank-number">${idx+1}</div>
+                <div class="rank-color" style="background-color:${getColorForName(item.name)}" title="${item.name}"></div>
+                <div class="rank-value">${formattedValue}</div>
+                <div class="rank-gap">${gap}</div>
+            `;
+            rankUl.appendChild(li);
+        });
+    });
+}
+
 // ==================== 选项卡切换 ====================
 function initTabs() {
     document.querySelectorAll('.tab').forEach(t => {
@@ -882,6 +947,7 @@ function initTabs() {
                     renderWeiboIncrementTable(weiboIncrementList);
                     renderWeiboTotalTable(weiboTotalList);
                     attachWeiboSortEvents();
+                    renderWeiboRankings();
                 }
             }
         });
