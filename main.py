@@ -30,6 +30,7 @@ XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
 BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"
 BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"
 WEIBO_DATA_FILE = "docs/weibo_data.json"
+WEIBO_DAILY_HISTORY_FILE = "docs/weibo_daily_history.json"   # 新增：存储每天23:50的完整增量数据
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -228,7 +229,6 @@ def update_history_general(file_path, current_data_dict, max_points=144):
 
 # ==================== 杨博文对比（严格按10分钟周期匹配） ====================
 def round_to_10_minutes(dt):
-    """将 datetime 对象舍入到最近的10分钟（向下取整）"""
     minute = (dt.minute // 10) * 10
     return dt.replace(minute=minute, second=0, microsecond=0)
 
@@ -242,12 +242,9 @@ def generate_baidu_compare(current_data_list, history):
         return None
 
     now = beijing_now()
-    # 今天的舍入时间（用于显示，但实际取今日最新数据就是当前抓取的那一条，不需要舍入）
-    # 昨天同一舍入后的时刻
     yesterday = now - timedelta(days=1)
-    target_rounded = round_to_10_minutes(yesterday)  # 例如 2026-06-08 00:30:00
+    target_rounded = round_to_10_minutes(yesterday)
 
-    # 在历史时间戳中寻找精确匹配（按舍入后的时间比较）
     matched_idx = None
     for idx, ts in enumerate(timestamps):
         ts_dt = parse_beijing_time(ts)
@@ -256,7 +253,6 @@ def generate_baidu_compare(current_data_list, history):
             break
 
     if matched_idx is None:
-        # 没有精确匹配，则返回 None，前端会显示"暂无"
         return None
 
     def safe_get(lst, idx):
@@ -471,6 +467,57 @@ def load_old_weibo_data():
             pass
     return {"date": "", "baseline": {}, "current": {}}
 
+# 新增：保存每天23:50的增量历史（保留35天）
+def update_weibo_daily_history(current, baseline, date_str):
+    """计算当天的增量数据并追加到历史文件，保留最近35条"""
+    # 计算每个用户的增量
+    daily_data = {"date": date_str, "timestamp": beijing_now().strftime("%Y-%m-%d %H:%M:%S"), "records": []}
+    for uid, name in WEIBO_USER_LIST:
+        cur = current.get(uid, {})
+        base = baseline.get(uid, {})
+        comment_inc = max(0, cur.get("comment", 0) - base.get("comment", 0))
+        repost_inc = max(0, cur.get("repost", 0) - base.get("repost", 0))
+        like_inc = max(0, cur.get("like", 0) - base.get("like", 0))
+        total_inc = comment_inc + repost_inc + like_inc
+        daily_data["records"].append({
+            "name": name,
+            "comment_inc": comment_inc,
+            "repost_inc": repost_inc,
+            "like_inc": like_inc,
+            "total_inc": total_inc
+        })
+    
+    # 读取现有历史
+    history = []
+    if os.path.exists(WEIBO_DAILY_HISTORY_FILE):
+        with open(WEIBO_DAILY_HISTORY_FILE, 'r', encoding='utf-8') as f:
+            history = json.load(f)
+            if not isinstance(history, list):
+                history = []
+    
+    # 检查是否已有同一天的记录（避免重复保存）
+    existing_idx = None
+    for i, item in enumerate(history):
+        if item.get("date") == date_str:
+            existing_idx = i
+            break
+    
+    if existing_idx is not None:
+        # 更新同一天的记录（以最后一次23:50为准）
+        history[existing_idx] = daily_data
+    else:
+        history.append(daily_data)
+    
+    # 按日期降序排序（最新的在前）
+    history.sort(key=lambda x: x["date"], reverse=True)
+    # 保留最近35条
+    if len(history) > 35:
+        history = history[:35]
+    
+    # 保存
+    save_history(WEIBO_DAILY_HISTORY_FILE, history)
+    print(f"微博每日历史已保存（{date_str}），当前共 {len(history)} 天数据")
+
 def fetch_all_weibo_data():
     if not WEIBO_COOKIE:
         print("微博Cookie未设置，跳过微博数据抓取")
@@ -495,6 +542,7 @@ def fetch_all_weibo_data():
                     current[uid] = old_base
                 else:
                     current[uid] = {"comment": 0, "repost": 0, "like": 0, "total": 0, "followers": 0}
+    # 处理baseline (今日0点基准)
     baseline = old.get("baseline", {})
     if old.get("date") != today_str or not baseline:
         baseline = {}
@@ -514,6 +562,16 @@ def fetch_all_weibo_data():
     }
     save_history(WEIBO_DATA_FILE, new_data)
     print(f"微博数据已保存到 {WEIBO_DATA_FILE}")
+    
+    # 新增：每天23:50保存当日完整增量数据到历史文件
+    now = beijing_now()
+    # 检查是否在23:50-23:59之间（允许误差）
+    if now.hour == 23 and now.minute >= 50:
+        # 需要确保 baseline 是今天的，并且 current 也是今天的
+        if new_data["date"] == today_str and baseline:
+            update_weibo_daily_history(current, baseline, today_str)
+        else:
+            print("微博每日历史保存跳过：当前不是今天的基准数据")
 
 # ==================== 并发抓取函数 ====================
 def fetch_all_baidu_data_concurrent(tasks):
@@ -560,14 +618,14 @@ def main():
         with open(DATA_FILE, 'w', encoding='utf-8') as f:
             json.dump(baidu_results, f, ensure_ascii=False, indent=2)
         baidu_series = {item["name"]: {"today_gift": item["today_gift"], "today_users": item["today_users"], "avg": item["avg"], "total_gift": item["total_gift"]} for item in baidu_results}
-        update_history_general(HISTORY_FILE, baidu_series, max_points=144)
+        # 修改为保存35天 = 5040点
+        update_history_general(HISTORY_FILE, baidu_series, max_points=5040)
         baidu_history = load_history(HISTORY_FILE, {"timestamps": [], "series": {}})
         baidu_compare = generate_baidu_compare(baidu_results, baidu_history)
         if baidu_compare:
             with open(COMPARE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(baidu_compare, f, ensure_ascii=False, indent=2)
         else:
-            # 如果没有对比数据，删除旧文件或留空（前端会显示暂无）
             if os.path.exists(COMPARE_FILE):
                 os.remove(COMPARE_FILE)
 
@@ -582,7 +640,8 @@ def main():
             if "total_points" in item:
                 xunyi_series[item["name"]] = {k: item[k] for k in ["total_points", "check1", "check2", "check3", "percent1", "percent2", "percent3"] if k in item}
         if xunyi_series:
-            update_history_general(XUNYI_HISTORY_FILE, xunyi_series, max_points=144)
+            # 修改为保存35天 = 5040点
+            update_history_general(XUNYI_HISTORY_FILE, xunyi_series, max_points=5040)
             xunyi_history = load_history(XUNYI_HISTORY_FILE, {"timestamps": [], "series": {}})
             xunyi_compare = generate_xunyi_compare(xunyi_results, xunyi_history)
             if xunyi_compare:
