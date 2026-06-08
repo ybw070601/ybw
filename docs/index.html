@@ -17,7 +17,7 @@
         <div class="tab" data-tab="weibo">🧣 个人微博数据</div>
     </div>
 
-    <!-- 百度送花内容 -->
+    <!-- 百度送花内容 (不变) -->
     <div id="baidu-tab" class="tab-content active">
         <h3>🌸 今日百度送花数据 (点击表头排序)</h3>
         <table class="data-table" id="baiduDataTable">
@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <!-- 寻艺内容 -->
+    <!-- 寻艺内容 (不变) -->
     <div id="xunyi-tab" class="tab-content">
         <h3>⭐ 今日寻艺数据 (点击表头排序)</h3>
         <table class="data-table" id="xunyiDataTable">
@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    <!-- 百度指数内容 -->
+    <!-- 百度指数内容 (不变) -->
     <div id="baiduindex-tab" class="tab-content">
         <h3>📈 今日百度指数数据 (点击表头排序)</h3>
         <table class="data-table" id="baiduIndexTable">
@@ -64,18 +64,25 @@
         </table>
     </div>
 
-    <!-- 🧣 微博数据内容 -->
+    <!-- 🧣 微博数据内容 (修改：新增排名容器) -->
     <div id="weibo-tab" class="tab-content">
         <h3>🧣 今日个人微博数据 (增量，基于今日0点) 点击表头排序</h3>
         <table class="data-table" id="weiboIncrementTable">
-            <thead><tr><th data-sort="标识">标识</th><th data-sort="comment_inc">评论增量</th><th data-sort="repost_inc">转发增量</th><th data-sort="like_inc">点赞增量</th><th data-sort="total_inc">转赞评增量总数</th></tr></thead>
+            <thead>
+                <tr><th data-sort="标识">标识</th><th data-sort="comment_inc">评论增量</th><th data-sort="repost_inc">转发增量</th><th data-sort="like_inc">点赞增量</th><th data-sort="total_inc">转赞评增量总数</th></tr>
+            </thead>
             <tbody id="weiboIncrementBody"><tr><td colspan="5">加载中...</td></tr></tbody>
         </table>
         <h3>🧣 累计个人微博数据 (当前累计) 点击表头排序</h3>
         <table class="data-table" id="weiboTotalTable">
-            <thead><tr><th data-sort="标识">标识</th><th data-sort="followers">粉丝数</th><th data-sort="comment">评论</th><th data-sort="repost">转发</th><th data-sort="like">点赞</th><th data-sort="total">转赞评总数</th></tr></thead>
+            <thead>
+                <tr><th data-sort="标识">标识</th><th data-sort="followers">粉丝数</th><th data-sort="comment">评论</th><th data-sort="repost">转发</th><th data-sort="like">点赞</th><th data-sort="total">转赞评总数</th></tr>
+            </thead>
             <tbody id="weiboTotalBody"><tr><td colspan="6">加载中...</td></tr></tbody>
         </table>
+        <!-- 新增：9个排名卡片容器 -->
+        <h3>📊 微博数据排名 (降序)</h3>
+        <div id="weiboRankingsContainer" class="rankings-grid"></div>
     </div>
 
     <div class="footer">
