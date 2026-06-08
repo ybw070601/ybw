@@ -31,20 +31,22 @@
         </div>
     </div>
 
-    <!-- 寻艺内容 -->
+    <!-- 寻艺内容（调整顺序：表格 → 对比 → 排名+折线图） -->
     <div id="xunyi-tab" class="tab-content">
         <h3>⭐ 今日寻艺数据 (点击表头排序)</h3>
         <table class="data-table" id="xunyiDataTable">
             <thead><tr id="xunyiTableHeader"><th data-sort="标识">标识</th><th data-sort="total_points">今日获赞总数</th><th data-sort="check3">三赞数量</th><th data-sort="check2">二赞数量</th><th data-sort="check1">一赞数量</th></tr></thead>
             <tbody id="xunyiTableBody"></tbody>
         </table>
-        <div class="rank-card" id="xunyiRankCard">
-            <div class="rank-left"><h3>⭐ 今日获赞总数排名</h3><ul class="rank-list" id="xunyiRankList"></ul></div>
-            <div class="rank-right"><div class="chart-header" id="xunyiChartDate"></div><div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div></div>
-        </div>
+        <!-- 杨博文对比模块（移至第二） -->
         <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
             <h3>⭐ 杨博文 - 寻艺获赞总数对比</h3>
             <div id="xunyiCompareTable">加载中...</div>
+        </div>
+        <!-- 排名+折线图模块（移至第三） -->
+        <div class="rank-card" id="xunyiRankCard" style="margin-top: 30px;">
+            <div class="rank-left"><h3>⭐ 今日获赞总数排名</h3><ul class="rank-list" id="xunyiRankList"></ul></div>
+            <div class="rank-right"><div class="chart-header" id="xunyiChartDate"></div><div class="chart-container"><canvas id="xunyiTrendChart"></canvas></div></div>
         </div>
     </div>
 
@@ -80,7 +82,6 @@
             </thead>
             <tbody id="weiboTotalBody"><tr><td colspan="6">加载中...<\/td></tr></tbody>
         </table>
-        <!-- 新增：9个排名卡片容器 -->
         <h3>📊 微博数据排名 (降序)</h3>
         <div id="weiboRankingsContainer" class="rankings-grid"></div>
     </div>
