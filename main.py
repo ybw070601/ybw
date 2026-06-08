@@ -29,7 +29,7 @@ COMPARE_FILE = "docs/compare_yangbowen.json"
 XUNYI_COMPARE_FILE = "docs/compare_yangbowen_xunyi.json"
 BAIDU_INDEX_TODAY_FILE = "docs/baidu_index_today.json"
 BAIDU_INDEX_YANG_HISTORY_FILE = "docs/baidu_index_yang_history.json"
-WEIBO_DATA_FILE = "docs/weibo_data.json"      # 新增微博数据文件
+WEIBO_DATA_FILE = "docs/weibo_data.json"
 
 STATIC_PROFILE = "aHR0cHM6Ly9ia2ltZy5jZG4uYmNlYm9zLmNvbS9zbWFydC80YjkwZjYwMzczOGRhOTc3MzkxMjhiMTkwNjBkZWYxOTg2MTgzNjdhNDVmNi1ia2ltZy1wcm9jZXNzLHZfMSxyd18xLHJoXzEsbWF4bF84MDAscGFkXzE%2FeC1iY2UtcHJvY2Vzcz1pbWFnZSUyRmZvcm1hdCUyQ2ZfYXV0byUyRnJlc2l6ZSUyQ21fZmlsbCUyQ3dfMTAwJTJDaF8xMDA%3D"
 
@@ -226,54 +226,80 @@ def update_history_general(file_path, current_data_dict, max_points=144):
 
     save_history(file_path, history)
 
-# ==================== 杨博文对比 ====================
+# ==================== 杨博文对比（严格按10分钟周期匹配） ====================
+def round_to_10_minutes(dt):
+    """将 datetime 对象舍入到最近的10分钟（向下取整）"""
+    minute = (dt.minute // 10) * 10
+    return dt.replace(minute=minute, second=0, microsecond=0)
+
 def generate_baidu_compare(current_data_list, history):
     yang = next((item for item in current_data_list if item["name"] == "杨博文"), None)
-    if not yang: return None
+    if not yang:
+        return None
     timestamps = history.get("timestamps", [])
     yang_hist = history.get("series", {}).get("杨博文", {})
-    if not timestamps or not yang_hist.get("today_gift"): return None
+    if not timestamps or not yang_hist.get("today_gift"):
+        return None
+
     now = beijing_now()
+    # 今天的舍入时间（用于显示，但实际取今日最新数据就是当前抓取的那一条，不需要舍入）
+    # 昨天同一舍入后的时刻
     yesterday = now - timedelta(days=1)
-    target_prefix = yesterday.strftime("%Y-%m-%d %H:%M")
-    best_idx = None
+    target_rounded = round_to_10_minutes(yesterday)  # 例如 2026-06-08 00:30:00
+
+    # 在历史时间戳中寻找精确匹配（按舍入后的时间比较）
+    matched_idx = None
     for idx, ts in enumerate(timestamps):
-        if ts.startswith(target_prefix):
-            best_idx = idx
+        ts_dt = parse_beijing_time(ts)
+        if round_to_10_minutes(ts_dt) == target_rounded:
+            matched_idx = idx
             break
-    if best_idx is None:
-        parsed = [parse_beijing_time(ts) for ts in timestamps]
-        best_idx = min(range(len(timestamps)), key=lambda i: abs((parsed[i] - yesterday).total_seconds()))
+
+    if matched_idx is None:
+        # 没有精确匹配，则返回 None，前端会显示"暂无"
+        return None
+
     def safe_get(lst, idx):
         return lst[idx] if idx < len(lst) else 0
+
     yesterday_data = {
-        "timestamp": timestamps[best_idx],
-        "today_gift": safe_get(yang_hist.get("today_gift", []), best_idx),
-        "today_users": safe_get(yang_hist.get("today_users", []), best_idx),
-        "avg": safe_get(yang_hist.get("avg", []), best_idx),
+        "timestamp": timestamps[matched_idx],
+        "today_gift": safe_get(yang_hist.get("today_gift", []), matched_idx),
+        "today_users": safe_get(yang_hist.get("today_users", []), matched_idx),
+        "avg": safe_get(yang_hist.get("avg", []), matched_idx),
     }
     return {"update_time": now.strftime("%Y-%m-%d %H:%M:%S"), "today": yang, "yesterday": yesterday_data}
 
 def generate_xunyi_compare(current_list, history):
     yang = next((item for item in current_list if item["name"] == "杨博文"), None)
-    if not yang: return None
+    if not yang:
+        return None
     timestamps = history.get("timestamps", [])
     yang_hist = history.get("series", {}).get("杨博文", {})
-    if not timestamps or not yang_hist.get("total_points"): return None
+    if not timestamps or not yang_hist.get("total_points"):
+        return None
+
     now = beijing_now()
     yesterday = now - timedelta(days=1)
-    target_prefix = yesterday.strftime("%Y-%m-%d %H:%M")
-    best_idx = None
+    target_rounded = round_to_10_minutes(yesterday)
+
+    matched_idx = None
     for idx, ts in enumerate(timestamps):
-        if ts.startswith(target_prefix):
-            best_idx = idx
+        ts_dt = parse_beijing_time(ts)
+        if round_to_10_minutes(ts_dt) == target_rounded:
+            matched_idx = idx
             break
-    if best_idx is None:
-        parsed = [parse_beijing_time(ts) for ts in timestamps]
-        best_idx = min(range(len(timestamps)), key=lambda i: abs((parsed[i] - yesterday).total_seconds()))
+
+    if matched_idx is None:
+        return None
+
     def safe_get(lst, idx):
         return lst[idx] if idx < len(lst) else 0
-    yesterday_data = {"timestamp": timestamps[best_idx], "total_points": safe_get(yang_hist.get("total_points", []), best_idx)}
+
+    yesterday_data = {
+        "timestamp": timestamps[matched_idx],
+        "total_points": safe_get(yang_hist.get("total_points", []), matched_idx),
+    }
     return {"update_time": now.strftime("%Y-%m-%d %H:%M:%S"), "today": {"total_points": yang["total_points"]}, "yesterday": yesterday_data}
 
 # ==================== 百度指数接口 ====================
@@ -460,7 +486,6 @@ def fetch_all_weibo_data():
             print(f"✅ 微博 {name} 数据获取成功")
         except Exception as e:
             print(f"❌ 微博 {name} 获取失败：{e}")
-            # 失败时优先保留旧 current，其次旧 baseline，最后给默认0
             old_cur = old.get("current", {}).get(uid)
             if old_cur:
                 current[uid] = old_cur
@@ -470,7 +495,6 @@ def fetch_all_weibo_data():
                     current[uid] = old_base
                 else:
                     current[uid] = {"comment": 0, "repost": 0, "like": 0, "total": 0, "followers": 0}
-    # 处理baseline (今日0点基准)
     baseline = old.get("baseline", {})
     if old.get("date") != today_str or not baseline:
         baseline = {}
@@ -542,6 +566,10 @@ def main():
         if baidu_compare:
             with open(COMPARE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(baidu_compare, f, ensure_ascii=False, indent=2)
+        else:
+            # 如果没有对比数据，删除旧文件或留空（前端会显示暂无）
+            if os.path.exists(COMPARE_FILE):
+                os.remove(COMPARE_FILE)
 
     # 2. 寻艺（并发）
     xunyi_mapping = load_xunyi_mapping()
@@ -560,6 +588,9 @@ def main():
             if xunyi_compare:
                 with open(XUNYI_COMPARE_FILE, 'w', encoding='utf-8') as f:
                     json.dump(xunyi_compare, f, ensure_ascii=False, indent=2)
+            else:
+                if os.path.exists(XUNYI_COMPARE_FILE):
+                    os.remove(XUNYI_COMPARE_FILE)
 
     # 3. 百度指数
     if BAIDU_INDEX_COOKIE and BAIDU_INDEX_CIPHER:
