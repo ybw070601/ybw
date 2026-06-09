@@ -4,6 +4,7 @@ let baiduOriginalOrder = [];
 
 let xunyiHistoryData = null, xunyiChart = null, xunyiLatestData = [];
 let xunyiOriginalOrder = [];
+let xunyiCompareData = null;   // 新增：存储寻艺对比数据
 
 let baiduIndexData = [];
 let baiduIndexOriginalOrder = [];
@@ -498,7 +499,33 @@ function renderXunyiChart() {
         }
     });
 }
+async function loadXunyiCompare() {
+    // 新增：读取后端生成的对比文件
+    try {
+        let r = await fetch('compare_yangbowen_xunyi.json?_=' + Date.now());
+        if (!r.ok) throw new Error();
+        xunyiCompareData = await r.json();
+        renderXunyiCompareTable();
+    } catch(e) {
+        document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无对比数据</p>';
+    }
+}
+function renderXunyiCompareTable() {
+    if (!xunyiCompareData) return;
+    let t = xunyiCompareData.today;
+    let y = xunyiCompareData.yesterday;
+    let diff = t.total_points - y.total_points;
+    document.getElementById('xunyiCompareTable').innerHTML = `
+        <table class="compare-table">
+            <thead><tr><th>指标</th><th>今日(${xunyiCompareData.update_time})</th><th>昨日(${y.timestamp})</th><th>差值</th></tr></thead>
+            <tbody>
+                <tr><td style="font-weight:bold">获赞总数</td><td>${t.total_points}</td><td>${y.total_points}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr>
+            </tbody>
+        </table>
+    `;
+}
 async function loadXunyiLatest() {
+    // 此函数不再负责对比，仅加载最新数据用于排名和表格
     try {
         let r = await fetch('xunyi_history.json?_=' + Date.now());
         if (!r.ok) throw new Error();
@@ -520,36 +547,6 @@ async function loadXunyiLatest() {
             xunyiLatestData = current;
             xunyiOriginalOrder = current.map(item => item.name);
             updateXunyiRankAndTable();
-            let yang = current.find(i => i.name === '杨博文');
-            if (yang && full.timestamps.length > 1) {
-                let yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                let yesterdayStr = yesterday.toISOString().slice(0,10);
-                let yesterdayIdx = -1;
-                for (let i=0; i<full.timestamps.length; i++) {
-                    if (full.timestamps[i].startsWith(yesterdayStr)) {
-                        yesterdayIdx = i;
-                        break;
-                    }
-                }
-                if (yesterdayIdx !== -1) {
-                    let yesterdayTotal = full.series['杨博文']?.total_points?.[yesterdayIdx] || 0;
-                    let diff = yang.total_points - yesterdayTotal;
-                    let todayTime = full.timestamps[latestIdx];
-                    let yesterdayTime = full.timestamps[yesterdayIdx];
-                    document.getElementById('xunyiCompareTable').innerHTML = `
-                        <table class="compare-table">
-                            <thead><tr><th>指标</th><th>今日(${todayTime})</th><th>昨日(${yesterdayTime})</th><th>差值</th></tr></thead>
-                            <tbody><tr><td style="font-weight:bold">获赞总数</td><td>${yang.total_points}</td><td>${yesterdayTotal}</td><td style="color:${diff>=0?'green':'red'}">${diff}</td></tr>
-                            </tbody>
-                        </table>
-                    `;
-                } else {
-                    document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无昨日同时段数据</p>';
-                }
-            } else {
-                document.getElementById('xunyiCompareTable').innerHTML = '<p>暂无对比数据</p>';
-            }
         }
     } catch(e) { console.error(e); }
 }
@@ -864,7 +861,6 @@ function attachWeiboSortEvents() {
     });
 }
 
-// 新增：生成9个排名卡片（无折线图）
 function renderWeiboRankings() {
     const container = document.getElementById('weiboRankingsContainer');
     if (!container) return;
@@ -937,6 +933,7 @@ function initTabs() {
                 if (!xunyiHistoryData) loadXunyiHistory();
                 else { updateXunyiRankAndTable(); }
                 loadXunyiLatest();
+                loadXunyiCompare();   // 加载对比数据
             } else if (target === 'baiduindex') {
                 document.getElementById('baiduindex-tab').classList.add('active');
                 loadBaiduIndex();
@@ -966,12 +963,14 @@ window.onload = async () => {
     initTabs();
     await loadXunyiHistory();
     await loadXunyiLatest();
+    await loadXunyiCompare();   // 初始加载对比数据
     attachXunyiSortEvents();
     loadBaiduIndex();
     await loadWeiboData();
     setInterval(() => {
         if (document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
+            loadXunyiCompare();
         }
         if (document.getElementById('baiduindex-tab').classList.contains('active')) {
             loadBaiduIndex();
