@@ -91,13 +91,22 @@
     <div id="huanwang-tab" class="tab-content">
         <h3>📺 今日欢网数据 (点击表头排序)</h3>
         <table class="data-table" id="huanwangDataTable">
-            <thead><tr><th data-sort="标识">标识</th><th data-sort="name">角色名</th><th data-sort="vote">得票数</th></tr></thead>
+            <thead><tr><th data-sort="标识">标识</th><th data-sort="today_vote">今日欢乐币</th><th data-sort="total_vote">累计欢乐币</th></tr></thead>
             <tbody id="huanwangTableBody"><tr><td colspan="3">加载中...</td></tr></tbody>
         </table>
-        <!-- 排名+折线图模块 -->
-        <div class="rank-card" id="huanwangRankCard" style="margin-top: 30px;">
-            <div class="rank-left"><h3>📊 得票数排名</h3><ul class="rank-list" id="huanwangRankList"></ul></div>
-            <div class="rank-right"><div class="chart-header" id="huanwangChartDate"></div><div class="chart-container"><canvas id="huanwangTrendChart"></canvas></div></div>
+        
+        <!-- 今日欢乐币排名+折线图 -->
+        <div class="rank-card" id="huanwangTodayRankCard" style="margin-top: 30px;">
+            <div class="rank-left"><h3>📊 今日欢乐币排名</h3><ul class="rank-list" id="huanwangTodayRankList"></ul></div>
+            <div class="rank-right"><div class="chart-header" id="huanwangTodayChartDate"></div><div class="chart-container"><canvas id="huanwangTodayTrendChart"></canvas></div></div>
+        </div>
+
+        <!-- 累计欢乐币排名（无图表） -->
+        <div class="rank-card-no-chart" id="huanwangTotalRankCard" style="margin-top: 30px;">
+            <div class="rank-left" style="max-height: none; overflow-y: visible;">
+                <h3>🏆 累计欢乐币排名</h3>
+                <ul class="rank-list" id="huanwangTotalRankList"></ul>
+            </div>
         </div>
     </div>
 
