@@ -4,12 +4,20 @@ let baiduOriginalOrder = [];
 
 let xunyiHistoryData = null, xunyiChart = null, xunyiLatestData = [];
 let xunyiOriginalOrder = [];
-let xunyiCompareData = null;   // 新增：存储寻艺对比数据
+let xunyiCompareData = null;
 
 let baiduIndexData = [];
 let baiduIndexOriginalOrder = [];
 let yangBaiduHistoryData = [];
 let yangBaiduChart = null;
+
+// ---------- 新增：欢网数据 ----------
+let huanwangHistoryData = null;      // { timestamps: [], series: { subName: { votes: [] } } }
+let huanwangLatestData = [];
+let huanwangOriginalOrder = [];
+let huanwangChart = null;
+let huanwangSortField = '标识';       // '标识' 或 'vote'
+let huanwangSortAsc = true;
 
 let globalLastUpdateTimeStr = '';
 
@@ -500,7 +508,6 @@ function renderXunyiChart() {
     });
 }
 async function loadXunyiCompare() {
-    // 新增：读取后端生成的对比文件
     try {
         let r = await fetch('compare_yangbowen_xunyi.json?_=' + Date.now());
         if (!r.ok) throw new Error();
@@ -525,7 +532,6 @@ function renderXunyiCompareTable() {
     `;
 }
 async function loadXunyiLatest() {
-    // 此函数不再负责对比，仅加载最新数据用于排名和表格
     try {
         let r = await fetch('xunyi_history.json?_=' + Date.now());
         if (!r.ok) throw new Error();
@@ -913,6 +919,252 @@ function renderWeiboRankings() {
     });
 }
 
+// ==================== 欢网数据模块 ====================
+// API 配置
+const HUANWANG_API_URL = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
+const HUANWANG_PARAMS = {
+    category: '1',
+    subCategory: '1-B',
+    summaryType: '0',
+    activityYearMonth: '2026-06'
+};
+const HUANWANG_HEADERS = {
+    'Accept': '*/*',
+    'Accept-Language': 'zh-CN,zh;q=0.9',
+    'Origin': 'https://bigdata-h5.huan.tv',
+    'Referer': 'https://bigdata-h5.huan.tv/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36 QuarkPC/6.8.7.860',
+    'X-Client-Type': 'h5'
+};
+
+// 加载欢网数据
+async function loadHuanwangData() {
+    try {
+        const url = new URL(HUANWANG_API_URL);
+        Object.keys(HUANWANG_PARAMS).forEach(k => url.searchParams.append(k, HUANWANG_PARAMS[k]));
+        const resp = await fetch(url, { headers: HUANWANG_HEADERS });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const json = await resp.json();
+        if (json.code === 200 && json.data && json.data.rankList) {
+            const rankList = json.data.rankList;
+            // 只保留 CUSTOM_ORDER 中的人
+            const filtered = rankList.filter(item => CUSTOM_ORDER.includes(item.subName));
+            // 构建最新数据
+            const latest = filtered.map(item => ({
+                subName: item.subName,
+                name: item.name || '',
+                vote: item.vote || 0
+            }));
+            // 按自定义顺序排序
+            latest.sort((a, b) => CUSTOM_ORDER.indexOf(a.subName) - CUSTOM_ORDER.indexOf(b.subName));
+            huanwangLatestData = latest;
+            huanwangOriginalOrder = latest.map(item => item.subName);
+
+            // 更新历史
+            const now = new Date();
+            const timeStr = now.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
+            if (!huanwangHistoryData) {
+                huanwangHistoryData = { timestamps: [], series: {} };
+            }
+            huanwangHistoryData.timestamps.push(timeStr);
+            latest.forEach(item => {
+                const sub = item.subName;
+                if (!huanwangHistoryData.series[sub]) {
+                    huanwangHistoryData.series[sub] = { votes: [] };
+                }
+                huanwangHistoryData.series[sub].votes.push(item.vote);
+            });
+
+            // 渲染
+            renderHuanwangTable(huanwangLatestData);
+            renderHuanwangRankAndChart();
+
+            // 更新全局更新时间（可借用）
+            globalLastUpdateTimeStr = timeStr;
+            updateGlobalTimeDisplay();
+        } else {
+            console.warn('欢网API返回异常:', json);
+        }
+    } catch(e) {
+        console.error('欢网数据加载失败:', e);
+        document.getElementById('huanwangTableBody').innerHTML = '<tr><td colspan="3">加载失败</td></tr>';
+    }
+}
+
+// 渲染欢网表格
+function renderHuanwangTable(data) {
+    const tbody = document.getElementById('huanwangTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">暂无数据</td></tr>';
+        return;
+    }
+    data.forEach(item => {
+        const bgColor = getLightBgColor(item.subName);
+        const colorCircle = getColorForName(item.subName);
+        const row = tbody.insertRow();
+        row.style.backgroundColor = bgColor;
+        row.insertCell(0).innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.subName}"></div>`;
+        row.insertCell(1).textContent = item.name;
+        row.insertCell(2).textContent = item.vote;
+    });
+}
+
+// 排序处理
+function huanwangSortHandler(e) {
+    const th = e.target.closest('th');
+    if (!th) return;
+    const field = th.getAttribute('data-sort');
+    if (!field) return;
+    let sorted;
+    if (field === '标识') {
+        // 恢复自定义顺序
+        sorted = huanwangOriginalOrder.map(sub => huanwangLatestData.find(item => item.subName === sub));
+    } else if (field === 'vote') {
+        sorted = [...huanwangLatestData].sort((a, b) => b.vote - a.vote);
+    } else {
+        return;
+    }
+    renderHuanwangTable(sorted);
+}
+
+// 渲染排名列表和折线图
+function renderHuanwangRankAndChart() {
+    if (!huanwangLatestData || huanwangLatestData.length === 0) {
+        document.getElementById('huanwangRankList').innerHTML = '<li>暂无数据</li>';
+        return;
+    }
+    // 排名列表（按票数降序）
+    const sorted = [...huanwangLatestData].sort((a, b) => b.vote - a.vote);
+    const rankList = document.getElementById('huanwangRankList');
+    rankList.innerHTML = '';
+    sorted.forEach((item, idx) => {
+        const prev = idx > 0 ? sorted[idx-1].vote : null;
+        const gap = idx === 0 ? '—' : `-${(prev - item.vote)} 票`;
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="rank-number">${idx+1}</div>
+            <div class="rank-color" style="background-color:${getColorForName(item.subName)}" title="${item.subName}"></div>
+            <div class="rank-value">${item.vote} 票</div>
+            <div class="rank-gap">${gap}</div>
+        `;
+        rankList.appendChild(li);
+    });
+
+    // 折线图 - 只显示今日数据
+    if (!huanwangHistoryData || !huanwangHistoryData.timestamps || huanwangHistoryData.timestamps.length === 0) {
+        document.getElementById('huanwangChartDate').innerHTML = '📅 暂无数据';
+        return;
+    }
+    const todayDate = getTodayBeijingDate();
+    const todayIndices = [];
+    const todayTimestamps = [];
+    huanwangHistoryData.timestamps.forEach((ts, idx) => {
+        if (ts.startsWith(todayDate)) {
+            todayIndices.push(idx);
+            todayTimestamps.push(ts);
+        }
+    });
+    if (todayTimestamps.length === 0) {
+        document.getElementById('huanwangChartDate').innerHTML = '📅 暂无今日数据';
+        const ctx = document.getElementById('huanwangTrendChart').getContext('2d');
+        if (huanwangChart) huanwangChart.destroy();
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+    }
+    const dateStr = `${parseInt(todayDate.slice(0,4))}年${parseInt(todayDate.slice(5,7))}月${parseInt(todayDate.slice(8,10))}日`;
+    document.getElementById('huanwangChartDate').innerHTML = `📅 ${dateStr}`;
+
+    const datasets = [];
+    huanwangOriginalOrder.forEach(sub => {
+        const series = huanwangHistoryData.series[sub];
+        if (!series) return;
+        const points = todayIndices.map(i => series.votes[i]).filter(v => v !== undefined);
+        if (points.length === 0) return;
+        datasets.push({
+            label: sub,
+            data: points,
+            borderColor: getColorForName(sub),
+            backgroundColor: 'transparent',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.2,
+            fill: false
+        });
+    });
+
+    const ctx = document.getElementById('huanwangTrendChart').getContext('2d');
+    if (huanwangChart) huanwangChart.destroy();
+    if (datasets.length === 0) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+    }
+    huanwangChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: todayTimestamps, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    itemSort: (a, b) => b.parsed.y - a.parsed.y,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            const label = context.dataset.label || '';
+                            let diffText = '';
+                            const dataIndex = context.dataIndex;
+                            if (dataIndex > 0) {
+                                const prevValue = context.dataset.data[dataIndex-1];
+                                const diff = value - prevValue;
+                                const sign = diff >= 0 ? '+' : '';
+                                diffText = ` (${sign}${Math.round(diff)} 票)`;
+                            }
+                            return `${label}: ${value} 票${diffText}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: '得票数' } },
+                x: {
+                    ticks: {
+                        callback: function(val, index) {
+                            const label = this.getLabelForValue(val);
+                            if (!label) return '';
+                            const parts = label.split(' ');
+                            if (parts.length < 2) return '';
+                            const time = parts[1];
+                            const [hour, minute] = time.split(':');
+                            if (minute === '00' && [0,4,8,12,16,20].includes(parseInt(hour))) {
+                                return `${hour}:00`;
+                            }
+                            return '';
+                        },
+                        autoSkip: true,
+                        maxRotation: 45
+                    },
+                    title: { display: true, text: '时间' }
+                }
+            }
+        }
+    });
+}
+
+// 绑定欢网表格排序事件
+function attachHuanwangSortEvents() {
+    const headers = document.querySelectorAll('#huanwangDataTable th');
+    headers.forEach(th => {
+        th.removeEventListener('click', huanwangSortHandler);
+        th.addEventListener('click', huanwangSortHandler);
+    });
+}
+
 // ==================== 选项卡切换 ====================
 function initTabs() {
     document.querySelectorAll('.tab').forEach(t => {
@@ -924,6 +1176,7 @@ function initTabs() {
             document.getElementById('xunyi-tab').classList.remove('active');
             document.getElementById('baiduindex-tab').classList.remove('active');
             document.getElementById('weibo-tab').classList.remove('active');
+            document.getElementById('huanwang-tab').classList.remove('active');
             if (target === 'baidu') {
                 document.getElementById('baidu-tab').classList.add('active');
                 if (!latestData) loadLatest();
@@ -933,7 +1186,7 @@ function initTabs() {
                 if (!xunyiHistoryData) loadXunyiHistory();
                 else { updateXunyiRankAndTable(); }
                 loadXunyiLatest();
-                loadXunyiCompare();   // 加载对比数据
+                loadXunyiCompare();
             } else if (target === 'baiduindex') {
                 document.getElementById('baiduindex-tab').classList.add('active');
                 loadBaiduIndex();
@@ -946,6 +1199,9 @@ function initTabs() {
                     attachWeiboSortEvents();
                     renderWeiboRankings();
                 }
+            } else if (target === 'huanwang') {
+                document.getElementById('huanwang-tab').classList.add('active');
+                loadHuanwangData();
             }
         });
     });
@@ -963,10 +1219,22 @@ window.onload = async () => {
     initTabs();
     await loadXunyiHistory();
     await loadXunyiLatest();
-    await loadXunyiCompare();   // 初始加载对比数据
+    await loadXunyiCompare();
     attachXunyiSortEvents();
     loadBaiduIndex();
     await loadWeiboData();
+    // 欢网初始加载
+    await loadHuanwangData();
+    attachHuanwangSortEvents();
+    // 欢网每10分钟刷新
+    setInterval(loadHuanwangData, 600000);
+    // 页面可见时刷新欢网
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && document.getElementById('huanwang-tab').classList.contains('active')) {
+            loadHuanwangData();
+        }
+    });
+    // 其他模块的定时刷新（保持原有）
     setInterval(() => {
         if (document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
