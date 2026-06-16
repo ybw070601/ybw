@@ -15,6 +15,7 @@
         <div class="tab" data-tab="xunyi">⭐ 寻艺数据</div>
         <div class="tab" data-tab="baiduindex">📈 百度指数</div>
         <div class="tab" data-tab="weibo">🧣 个人微博数据</div>
+        <div class="tab" data-tab="huanwang">📺 欢网数据</div>
     </div>
 
     <!-- 百度送花内容 -->
@@ -22,7 +23,7 @@
         <h3>🌸 今日百度送花数据 (点击表头排序)</h3>
         <table class="data-table" id="baiduDataTable">
             <thead><tr><th data-sort="name">标识</th><th data-sort="today_gift">今日送花</th><th data-sort="today_users">今日人数</th><th data-sort="avg">人均</th><th data-sort="total_gift">累计送花</th></tr></thead>
-            <tbody id="baiduTableBody"><tr><td colspan="5">加载中...<\/td></tr></tbody>
+            <tbody id="baiduTableBody"><tr><td colspan="5">加载中...</td></tr></tbody>
         </table>
         <div id="cardsContainer"></div>
         <div class="compare-box" id="compareContainer" style="margin-top: 30px;">
@@ -38,7 +39,7 @@
             <thead><tr id="xunyiTableHeader"><th data-sort="标识">标识</th><th data-sort="total_points">今日获赞总数</th><th data-sort="check3">三赞数量</th><th data-sort="check2">二赞数量</th><th data-sort="check1">一赞数量</th></tr></thead>
             <tbody id="xunyiTableBody"></tbody>
         </table>
-        <!-- 杨博文对比模块（已统一标题） -->
+        <!-- 杨博文对比模块 -->
         <div class="compare-box" id="xunyiCompareContainer" style="margin-top: 30px;">
             <h3>⭐ 杨博文 - 今天 vs 昨天（同一时段）数据对比</h3>
             <div id="xunyiCompareTable">加载中...</div>
@@ -55,7 +56,7 @@
         <h3>📈 今日百度指数数据 (点击表头排序)</h3>
         <table class="data-table" id="baiduIndexTable">
             <thead><tr><th data-sort="标识">标识</th><th data-sort="score">百度指数</th></tr></thead>
-            <tbody id="baiduIndexTableBody"><tr><td colspan="2">加载中...<\/td></tr></tbody>
+            <tbody id="baiduIndexTableBody"><tr><td colspan="2">加载中...</td></tr></tbody>
         </table>
         <h3>📈 杨博文 - 近15天百度指数趋势</h3>
         <div class="chart-container" style="height: 400px; margin-bottom: 30px;"><canvas id="yangBaiduIndexChart"></canvas></div>
@@ -73,17 +74,31 @@
             <thead>
                 <tr><th data-sort="标识">标识</th><th data-sort="comment_inc">评论增量</th><th data-sort="repost_inc">转发增量</th><th data-sort="like_inc">点赞增量</th><th data-sort="total_inc">转赞评增量总数</th></tr>
             </thead>
-            <tbody id="weiboIncrementBody"><tr><td colspan="5">加载中...<\/td></tr></tbody>
+            <tbody id="weiboIncrementBody"><tr><td colspan="5">加载中...</td></tr></tbody>
         </table>
         <h3>🧣 累计个人微博数据 (当前累计) 点击表头排序</h3>
         <table class="data-table" id="weiboTotalTable">
             <thead>
                 <tr><th data-sort="标识">标识</th><th data-sort="followers">粉丝数</th><th data-sort="comment">评论</th><th data-sort="repost">转发</th><th data-sort="like">点赞</th><th data-sort="total">转赞评总数</th></tr>
             </thead>
-            <tbody id="weiboTotalBody"><tr><td colspan="6">加载中...<\/td></tr></tbody>
+            <tbody id="weiboTotalBody"><tr><td colspan="6">加载中...</td></tr></tbody>
         </table>
         <h3>📊 微博数据排名 (降序)</h3>
         <div id="weiboRankingsContainer" class="rankings-grid"></div>
+    </div>
+
+    <!-- 欢网数据内容 -->
+    <div id="huanwang-tab" class="tab-content">
+        <h3>📺 今日欢网数据 (点击表头排序)</h3>
+        <table class="data-table" id="huanwangDataTable">
+            <thead><tr><th data-sort="标识">标识</th><th data-sort="name">角色名</th><th data-sort="vote">得票数</th></tr></thead>
+            <tbody id="huanwangTableBody"><tr><td colspan="3">加载中...</td></tr></tbody>
+        </table>
+        <!-- 排名+折线图模块 -->
+        <div class="rank-card" id="huanwangRankCard" style="margin-top: 30px;">
+            <div class="rank-left"><h3>📊 得票数排名</h3><ul class="rank-list" id="huanwangRankList"></ul></div>
+            <div class="rank-right"><div class="chart-header" id="huanwangChartDate"></div><div class="chart-container"><canvas id="huanwangTrendChart"></canvas></div></div>
+        </div>
     </div>
 
     <div class="footer">
