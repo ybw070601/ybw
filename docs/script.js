@@ -11,13 +11,13 @@ let baiduIndexOriginalOrder = [];
 let yangBaiduHistoryData = [];
 let yangBaiduChart = null;
 
-// ---------- 新增：欢网数据 ----------
-let huanwangHistoryData = null;      // { timestamps: [], series: { subName: { votes: [] } } }
-let huanwangLatestData = [];
-let huanwangOriginalOrder = [];
-let huanwangChart = null;
-let huanwangSortField = '标识';       // '标识' 或 'vote'
-let huanwangSortAsc = true;
+// 欢网数据
+let huanwangTodayData = [];
+let huanwangTotalData = [];
+let huanwangTodayHistory = null;
+let huanwangTodayChart = null;
+let huanwangTodayOriginalOrder = [];
+let huanwangTotalOriginalOrder = [];
 
 let globalLastUpdateTimeStr = '';
 
@@ -921,11 +921,18 @@ function renderWeiboRankings() {
 
 // ==================== 欢网数据模块 ====================
 // API 配置
-const HUANWANG_API_URL = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
-const HUANWANG_PARAMS = {
+const HUANWANG_API_URL_TODAY = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
+const HUANWANG_API_URL_TOTAL = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
+const HUANWANG_PARAMS_TODAY = {
     category: '1',
     subCategory: '1-B',
     summaryType: '0',
+    activityYearMonth: '2026-06'
+};
+const HUANWANG_PARAMS_TOTAL = {
+    category: '1',
+    subCategory: '1-B',
+    summaryType: '1',
     activityYearMonth: '2026-06'
 };
 const HUANWANG_HEADERS = {
@@ -937,107 +944,164 @@ const HUANWANG_HEADERS = {
     'X-Client-Type': 'h5'
 };
 
-// 加载欢网数据
-async function loadHuanwangData() {
+async function fetchHuanwangData(params) {
     try {
-        const url = new URL(HUANWANG_API_URL);
-        Object.keys(HUANWANG_PARAMS).forEach(k => url.searchParams.append(k, HUANWANG_PARAMS[k]));
+        const url = new URL(HUANWANG_API_URL_TODAY);
+        Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
         const resp = await fetch(url, { headers: HUANWANG_HEADERS });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const json = await resp.json();
         if (json.code === 200 && json.data && json.data.rankList) {
-            const rankList = json.data.rankList;
-            // 只保留 CUSTOM_ORDER 中的人
-            const filtered = rankList.filter(item => CUSTOM_ORDER.includes(item.subName));
-            // 构建最新数据
-            const latest = filtered.map(item => ({
+            return json.data.rankList;
+        } else {
+            console.warn('欢网API返回异常:', json);
+            return null;
+        }
+    } catch (e) {
+        console.error('欢网数据获取失败:', e);
+        return null;
+    }
+}
+
+async function loadHuanwangData() {
+    try {
+        const [todayList, totalList] = await Promise.all([
+            fetchHuanwangData(HUANWANG_PARAMS_TODAY),
+            fetchHuanwangData(HUANWANG_PARAMS_TOTAL)
+        ]);
+
+        if (!todayList || !totalList) {
+            throw new Error('获取欢网数据失败');
+        }
+
+        // 今日数据
+        const todayFiltered = todayList
+            .filter(item => CUSTOM_ORDER.includes(item.subName))
+            .map(item => ({
                 subName: item.subName,
                 name: item.name || '',
                 vote: item.vote || 0
             }));
-            // 按自定义顺序排序
-            latest.sort((a, b) => CUSTOM_ORDER.indexOf(a.subName) - CUSTOM_ORDER.indexOf(b.subName));
-            huanwangLatestData = latest;
-            huanwangOriginalOrder = latest.map(item => item.subName);
+        todayFiltered.sort((a, b) => CUSTOM_ORDER.indexOf(a.subName) - CUSTOM_ORDER.indexOf(b.subName));
+        huanwangTodayData = todayFiltered;
+        huanwangTodayOriginalOrder = todayFiltered.map(item => item.subName);
 
-            // 更新历史
-            const now = new Date();
-            const timeStr = now.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
-            if (!huanwangHistoryData) {
-                huanwangHistoryData = { timestamps: [], series: {} };
-            }
-            huanwangHistoryData.timestamps.push(timeStr);
-            latest.forEach(item => {
-                const sub = item.subName;
-                if (!huanwangHistoryData.series[sub]) {
-                    huanwangHistoryData.series[sub] = { votes: [] };
-                }
-                huanwangHistoryData.series[sub].votes.push(item.vote);
-            });
+        // 累计数据
+        const totalFiltered = totalList
+            .filter(item => CUSTOM_ORDER.includes(item.subName))
+            .map(item => ({
+                subName: item.subName,
+                name: item.name || '',
+                vote: item.vote || 0
+            }));
+        totalFiltered.sort((a, b) => CUSTOM_ORDER.indexOf(a.subName) - CUSTOM_ORDER.indexOf(b.subName));
+        huanwangTotalData = totalFiltered;
+        huanwangTotalOriginalOrder = totalFiltered.map(item => item.subName);
 
-            // 渲染
-            renderHuanwangTable(huanwangLatestData);
-            renderHuanwangRankAndChart();
-
-            // 更新全局更新时间（可借用）
-            globalLastUpdateTimeStr = timeStr;
-            updateGlobalTimeDisplay();
-        } else {
-            console.warn('欢网API返回异常:', json);
+        // 更新今日历史（折线图用）
+        const now = new Date();
+        const timeStr = now.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
+        if (!huanwangTodayHistory) {
+            huanwangTodayHistory = { timestamps: [], series: {} };
         }
-    } catch(e) {
+        huanwangTodayHistory.timestamps.push(timeStr);
+        huanwangTodayData.forEach(item => {
+            const sub = item.subName;
+            if (!huanwangTodayHistory.series[sub]) {
+                huanwangTodayHistory.series[sub] = { votes: [] };
+            }
+            huanwangTodayHistory.series[sub].votes.push(item.vote);
+        });
+
+        // 渲染
+        renderHuanwangTable(huanwangTodayData, huanwangTotalData);
+        renderHuanwangTodayRankAndChart();
+        renderHuanwangTotalRank();
+
+        globalLastUpdateTimeStr = timeStr;
+        updateGlobalTimeDisplay();
+    } catch (e) {
         console.error('欢网数据加载失败:', e);
         document.getElementById('huanwangTableBody').innerHTML = '<tr><td colspan="3">加载失败</td></tr>';
     }
 }
 
-// 渲染欢网表格
-function renderHuanwangTable(data) {
+function renderHuanwangTable(todayData, totalData) {
     const tbody = document.getElementById('huanwangTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    if (!data || data.length === 0) {
+    if (!todayData || todayData.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3">暂无数据</td></tr>';
         return;
     }
-    data.forEach(item => {
+    const merged = todayData.map(todayItem => {
+        const totalItem = totalData.find(t => t.subName === todayItem.subName);
+        return {
+            subName: todayItem.subName,
+            todayVote: todayItem.vote,
+            totalVote: totalItem ? totalItem.vote : 0
+        };
+    });
+    merged.sort((a, b) => CUSTOM_ORDER.indexOf(a.subName) - CUSTOM_ORDER.indexOf(b.subName));
+    merged.forEach(item => {
         const bgColor = getLightBgColor(item.subName);
         const colorCircle = getColorForName(item.subName);
         const row = tbody.insertRow();
         row.style.backgroundColor = bgColor;
         row.insertCell(0).innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.subName}"></div>`;
-        row.insertCell(1).textContent = item.name;
-        row.insertCell(2).textContent = item.vote;
+        row.insertCell(1).textContent = item.todayVote;
+        row.insertCell(2).textContent = item.totalVote;
     });
 }
 
-// 排序处理
 function huanwangSortHandler(e) {
     const th = e.target.closest('th');
     if (!th) return;
     const field = th.getAttribute('data-sort');
     if (!field) return;
+    
+    const todayData = huanwangTodayData;
+    const totalData = huanwangTotalData;
+    const merged = todayData.map(todayItem => {
+        const totalItem = totalData.find(t => t.subName === todayItem.subName);
+        return {
+            subName: todayItem.subName,
+            todayVote: todayItem.vote,
+            totalVote: totalItem ? totalItem.vote : 0
+        };
+    });
+
     let sorted;
     if (field === '标识') {
-        // 恢复自定义顺序
-        sorted = huanwangOriginalOrder.map(sub => huanwangLatestData.find(item => item.subName === sub));
-    } else if (field === 'vote') {
-        sorted = [...huanwangLatestData].sort((a, b) => b.vote - a.vote);
+        sorted = huanwangTodayOriginalOrder.map(sub => merged.find(item => item.subName === sub));
+    } else if (field === 'today_vote') {
+        sorted = [...merged].sort((a, b) => b.todayVote - a.todayVote);
+    } else if (field === 'total_vote') {
+        sorted = [...merged].sort((a, b) => b.totalVote - a.totalVote);
     } else {
         return;
     }
-    renderHuanwangTable(sorted);
+    const tbody = document.getElementById('huanwangTableBody');
+    tbody.innerHTML = '';
+    sorted.forEach(item => {
+        const bgColor = getLightBgColor(item.subName);
+        const colorCircle = getColorForName(item.subName);
+        const row = tbody.insertRow();
+        row.style.backgroundColor = bgColor;
+        row.insertCell(0).innerHTML = `<div class="color-dot" style="background-color:${colorCircle}" title="${item.subName}"></div>`;
+        row.insertCell(1).textContent = item.todayVote;
+        row.insertCell(2).textContent = item.totalVote;
+    });
 }
 
-// 渲染排名列表和折线图
-function renderHuanwangRankAndChart() {
-    if (!huanwangLatestData || huanwangLatestData.length === 0) {
-        document.getElementById('huanwangRankList').innerHTML = '<li>暂无数据</li>';
+function renderHuanwangTodayRankAndChart() {
+    if (!huanwangTodayData || huanwangTodayData.length === 0) {
+        document.getElementById('huanwangTodayRankList').innerHTML = '<li>暂无数据</li>';
         return;
     }
-    // 排名列表（按票数降序）
-    const sorted = [...huanwangLatestData].sort((a, b) => b.vote - a.vote);
-    const rankList = document.getElementById('huanwangRankList');
+    // 排名列表
+    const sorted = [...huanwangTodayData].sort((a, b) => b.vote - a.vote);
+    const rankList = document.getElementById('huanwangTodayRankList');
     rankList.innerHTML = '';
     sorted.forEach((item, idx) => {
         const prev = idx > 0 ? sorted[idx-1].vote : null;
@@ -1052,33 +1116,33 @@ function renderHuanwangRankAndChart() {
         rankList.appendChild(li);
     });
 
-    // 折线图 - 只显示今日数据
-    if (!huanwangHistoryData || !huanwangHistoryData.timestamps || huanwangHistoryData.timestamps.length === 0) {
-        document.getElementById('huanwangChartDate').innerHTML = '📅 暂无数据';
+    // 折线图
+    if (!huanwangTodayHistory || !huanwangTodayHistory.timestamps || huanwangTodayHistory.timestamps.length === 0) {
+        document.getElementById('huanwangTodayChartDate').innerHTML = '📅 暂无数据';
         return;
     }
     const todayDate = getTodayBeijingDate();
     const todayIndices = [];
     const todayTimestamps = [];
-    huanwangHistoryData.timestamps.forEach((ts, idx) => {
+    huanwangTodayHistory.timestamps.forEach((ts, idx) => {
         if (ts.startsWith(todayDate)) {
             todayIndices.push(idx);
             todayTimestamps.push(ts);
         }
     });
     if (todayTimestamps.length === 0) {
-        document.getElementById('huanwangChartDate').innerHTML = '📅 暂无今日数据';
-        const ctx = document.getElementById('huanwangTrendChart').getContext('2d');
-        if (huanwangChart) huanwangChart.destroy();
+        document.getElementById('huanwangTodayChartDate').innerHTML = '📅 暂无今日数据';
+        const ctx = document.getElementById('huanwangTodayTrendChart').getContext('2d');
+        if (huanwangTodayChart) huanwangTodayChart.destroy();
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
     const dateStr = `${parseInt(todayDate.slice(0,4))}年${parseInt(todayDate.slice(5,7))}月${parseInt(todayDate.slice(8,10))}日`;
-    document.getElementById('huanwangChartDate').innerHTML = `📅 ${dateStr}`;
+    document.getElementById('huanwangTodayChartDate').innerHTML = `📅 ${dateStr}`;
 
     const datasets = [];
-    huanwangOriginalOrder.forEach(sub => {
-        const series = huanwangHistoryData.series[sub];
+    huanwangTodayOriginalOrder.forEach(sub => {
+        const series = huanwangTodayHistory.series[sub];
         if (!series) return;
         const points = todayIndices.map(i => series.votes[i]).filter(v => v !== undefined);
         if (points.length === 0) return;
@@ -1095,13 +1159,13 @@ function renderHuanwangRankAndChart() {
         });
     });
 
-    const ctx = document.getElementById('huanwangTrendChart').getContext('2d');
-    if (huanwangChart) huanwangChart.destroy();
+    const ctx = document.getElementById('huanwangTodayTrendChart').getContext('2d');
+    if (huanwangTodayChart) huanwangTodayChart.destroy();
     if (datasets.length === 0) {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         return;
     }
-    huanwangChart = new Chart(ctx, {
+    huanwangTodayChart = new Chart(ctx, {
         type: 'line',
         data: { labels: todayTimestamps, datasets: datasets },
         options: {
@@ -1131,7 +1195,7 @@ function renderHuanwangRankAndChart() {
                 }
             },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: '得票数' } },
+                y: { beginAtZero: true, title: { display: true, text: '今日欢乐币' } },
                 x: {
                     ticks: {
                         callback: function(val, index) {
@@ -1156,7 +1220,28 @@ function renderHuanwangRankAndChart() {
     });
 }
 
-// 绑定欢网表格排序事件
+function renderHuanwangTotalRank() {
+    if (!huanwangTotalData || huanwangTotalData.length === 0) {
+        document.getElementById('huanwangTotalRankList').innerHTML = '<li>暂无数据</li>';
+        return;
+    }
+    const sorted = [...huanwangTotalData].sort((a, b) => b.vote - a.vote);
+    const rankList = document.getElementById('huanwangTotalRankList');
+    rankList.innerHTML = '';
+    sorted.forEach((item, idx) => {
+        const prev = idx > 0 ? sorted[idx-1].vote : null;
+        const gap = idx === 0 ? '—' : `-${(prev - item.vote)} 票`;
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="rank-number">${idx+1}</div>
+            <div class="rank-color" style="background-color:${getColorForName(item.subName)}" title="${item.subName}"></div>
+            <div class="rank-value">${item.vote} 票</div>
+            <div class="rank-gap">${gap}</div>
+        `;
+        rankList.appendChild(li);
+    });
+}
+
 function attachHuanwangSortEvents() {
     const headers = document.querySelectorAll('#huanwangDataTable th');
     headers.forEach(th => {
@@ -1223,18 +1308,18 @@ window.onload = async () => {
     attachXunyiSortEvents();
     loadBaiduIndex();
     await loadWeiboData();
-    // 欢网初始加载
+    
+    // 欢网
     await loadHuanwangData();
     attachHuanwangSortEvents();
-    // 欢网每10分钟刷新
     setInterval(loadHuanwangData, 600000);
-    // 页面可见时刷新欢网
+    
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden && document.getElementById('huanwang-tab').classList.contains('active')) {
             loadHuanwangData();
         }
     });
-    // 其他模块的定时刷新（保持原有）
+    
     setInterval(() => {
         if (document.getElementById('xunyi-tab').classList.contains('active')) {
             loadXunyiLatest();
