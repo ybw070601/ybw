@@ -14,8 +14,6 @@ let yangBaiduChart = null;
 // 欢网数据
 let huanwangTodayData = [];
 let huanwangTotalData = [];
-let huanwangTodayHistory = null;
-let huanwangTodayChart = null;
 let huanwangTodayOriginalOrder = [];
 let huanwangTotalOriginalOrder = [];
 
@@ -919,8 +917,7 @@ function renderWeiboRankings() {
     });
 }
 
-// ==================== 欢网数据模块 ====================
-// API 配置
+// ==================== 欢网数据模块（无折线图） ====================
 const HUANWANG_API_URL_TODAY = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
 const HUANWANG_API_URL_TOTAL = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
 const HUANWANG_PARAMS_TODAY = {
@@ -998,26 +995,13 @@ async function loadHuanwangData() {
         huanwangTotalData = totalFiltered;
         huanwangTotalOriginalOrder = totalFiltered.map(item => item.subName);
 
-        // 更新今日历史（折线图用）
-        const now = new Date();
-        const timeStr = now.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
-        if (!huanwangTodayHistory) {
-            huanwangTodayHistory = { timestamps: [], series: {} };
-        }
-        huanwangTodayHistory.timestamps.push(timeStr);
-        huanwangTodayData.forEach(item => {
-            const sub = item.subName;
-            if (!huanwangTodayHistory.series[sub]) {
-                huanwangTodayHistory.series[sub] = { votes: [] };
-            }
-            huanwangTodayHistory.series[sub].votes.push(item.vote);
-        });
-
-        // 渲染
+        // 渲染表格和两个排名
         renderHuanwangTable(huanwangTodayData, huanwangTotalData);
-        renderHuanwangTodayRankAndChart();
+        renderHuanwangTodayRank();
         renderHuanwangTotalRank();
 
+        const now = new Date();
+        const timeStr = now.toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' });
         globalLastUpdateTimeStr = timeStr;
         updateGlobalTimeDisplay();
     } catch (e) {
@@ -1094,12 +1078,11 @@ function huanwangSortHandler(e) {
     });
 }
 
-function renderHuanwangTodayRankAndChart() {
+function renderHuanwangTodayRank() {
     if (!huanwangTodayData || huanwangTodayData.length === 0) {
         document.getElementById('huanwangTodayRankList').innerHTML = '<li>暂无数据</li>';
         return;
     }
-    // 排名列表
     const sorted = [...huanwangTodayData].sort((a, b) => b.vote - a.vote);
     const rankList = document.getElementById('huanwangTodayRankList');
     rankList.innerHTML = '';
@@ -1114,109 +1097,6 @@ function renderHuanwangTodayRankAndChart() {
             <div class="rank-gap">${gap}</div>
         `;
         rankList.appendChild(li);
-    });
-
-    // 折线图
-    if (!huanwangTodayHistory || !huanwangTodayHistory.timestamps || huanwangTodayHistory.timestamps.length === 0) {
-        document.getElementById('huanwangTodayChartDate').innerHTML = '📅 暂无数据';
-        return;
-    }
-    const todayDate = getTodayBeijingDate();
-    const todayIndices = [];
-    const todayTimestamps = [];
-    huanwangTodayHistory.timestamps.forEach((ts, idx) => {
-        if (ts.startsWith(todayDate)) {
-            todayIndices.push(idx);
-            todayTimestamps.push(ts);
-        }
-    });
-    if (todayTimestamps.length === 0) {
-        document.getElementById('huanwangTodayChartDate').innerHTML = '📅 暂无今日数据';
-        const ctx = document.getElementById('huanwangTodayTrendChart').getContext('2d');
-        if (huanwangTodayChart) huanwangTodayChart.destroy();
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        return;
-    }
-    const dateStr = `${parseInt(todayDate.slice(0,4))}年${parseInt(todayDate.slice(5,7))}月${parseInt(todayDate.slice(8,10))}日`;
-    document.getElementById('huanwangTodayChartDate').innerHTML = `📅 ${dateStr}`;
-
-    const datasets = [];
-    huanwangTodayOriginalOrder.forEach(sub => {
-        const series = huanwangTodayHistory.series[sub];
-        if (!series) return;
-        const points = todayIndices.map(i => series.votes[i]).filter(v => v !== undefined);
-        if (points.length === 0) return;
-        datasets.push({
-            label: sub,
-            data: points,
-            borderColor: getColorForName(sub),
-            backgroundColor: 'transparent',
-            borderWidth: 2.5,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            tension: 0.2,
-            fill: false
-        });
-    });
-
-    const ctx = document.getElementById('huanwangTodayTrendChart').getContext('2d');
-    if (huanwangTodayChart) huanwangTodayChart.destroy();
-    if (datasets.length === 0) {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        return;
-    }
-    huanwangTodayChart = new Chart(ctx, {
-        type: 'line',
-        data: { labels: todayTimestamps, datasets: datasets },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    itemSort: (a, b) => b.parsed.y - a.parsed.y,
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.parsed.y;
-                            const label = context.dataset.label || '';
-                            let diffText = '';
-                            const dataIndex = context.dataIndex;
-                            if (dataIndex > 0) {
-                                const prevValue = context.dataset.data[dataIndex-1];
-                                const diff = value - prevValue;
-                                const sign = diff >= 0 ? '+' : '';
-                                diffText = ` (${sign}${Math.round(diff)} 票)`;
-                            }
-                            return `${label}: ${value} 票${diffText}`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: '今日欢乐币' } },
-                x: {
-                    ticks: {
-                        callback: function(val, index) {
-                            const label = this.getLabelForValue(val);
-                            if (!label) return '';
-                            const parts = label.split(' ');
-                            if (parts.length < 2) return '';
-                            const time = parts[1];
-                            const [hour, minute] = time.split(':');
-                            if (minute === '00' && [0,4,8,12,16,20].includes(parseInt(hour))) {
-                                return `${hour}:00`;
-                            }
-                            return '';
-                        },
-                        autoSkip: true,
-                        maxRotation: 45
-                    },
-                    title: { display: true, text: '时间' }
-                }
-            }
-        }
     });
 }
 
@@ -1268,17 +1148,26 @@ function initTabs() {
                 if (!historyData) loadHistory();
             } else if (target === 'xunyi') {
                 document.getElementById('xunyi-tab').classList.add('active');
-                if (!xunyiHistoryData) loadXunyiHistory();
-                else { updateXunyiRankAndTable(); }
-                loadXunyiLatest();
-                loadXunyiCompare();
+                if (!xunyiHistoryData) {
+                    document.getElementById('xunyiTableBody').innerHTML = '<tr><td colspan="5">加载中...</td></tr>';
+                    loadXunyiHistory();
+                    loadXunyiLatest();
+                    loadXunyiCompare();
+                } else {
+                    updateXunyiRankAndTable();
+                }
             } else if (target === 'baiduindex') {
                 document.getElementById('baiduindex-tab').classList.add('active');
-                loadBaiduIndex();
+                if (baiduIndexData.length === 0) {
+                    document.getElementById('baiduIndexTableBody').innerHTML = '<tr><td colspan="2">加载中...</td></tr>';
+                    loadBaiduIndex();
+                }
             } else if (target === 'weibo') {
                 document.getElementById('weibo-tab').classList.add('active');
-                if (!weiboFullData) loadWeiboData();
-                else {
+                if (!weiboFullData) {
+                    document.getElementById('weiboIncrementBody').innerHTML = '<tr><td colspan="5">加载中...</td></tr>';
+                    loadWeiboData();
+                } else {
                     renderWeiboIncrementTable(weiboIncrementList);
                     renderWeiboTotalTable(weiboTotalList);
                     attachWeiboSortEvents();
@@ -1286,7 +1175,10 @@ function initTabs() {
                 }
             } else if (target === 'huanwang') {
                 document.getElementById('huanwang-tab').classList.add('active');
-                loadHuanwangData();
+                if (huanwangTodayData.length === 0) {
+                    document.getElementById('huanwangTableBody').innerHTML = '<tr><td colspan="3">加载中...</td></tr>';
+                    loadHuanwangData();
+                }
             }
         });
     });
@@ -1294,42 +1186,39 @@ function initTabs() {
 
 // ==================== 页面初始化 ====================
 window.onload = async () => {
+    initTabs();
+    // 默认加载百度送花数据（默认激活的标签）
     await loadHistory();
     await loadLatest();
     await loadCompare();
     setupBaiduTableSort();
-    setInterval(loadLatest, 60000);
-    setInterval(loadCompare, 60000);
-    setInterval(async () => { await loadHistory(); }, 600000);
-    initTabs();
-    await loadXunyiHistory();
-    await loadXunyiLatest();
-    await loadXunyiCompare();
-    attachXunyiSortEvents();
-    loadBaiduIndex();
-    await loadWeiboData();
-    
-    // 欢网
-    await loadHuanwangData();
-    attachHuanwangSortEvents();
-    setInterval(loadHuanwangData, 600000);
-    
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden && document.getElementById('huanwang-tab').classList.contains('active')) {
-            loadHuanwangData();
-        }
-    });
-    
+
+    // 定时刷新（每分钟检查当前激活的标签）
     setInterval(() => {
-        if (document.getElementById('xunyi-tab').classList.contains('active')) {
-            loadXunyiLatest();
-            loadXunyiCompare();
+        const activeTab = document.querySelector('.tab.active');
+        if (!activeTab) return;
+        const target = activeTab.dataset.tab;
+        if (target === 'baidu') {
+            loadLatest();
+            loadCompare();
+            loadHistory();
+        } else if (target === 'xunyi') {
+            if (document.getElementById('xunyi-tab').classList.contains('active')) {
+                loadXunyiLatest();
+                loadXunyiCompare();
+            }
+        } else if (target === 'baiduindex') {
+            if (document.getElementById('baiduindex-tab').classList.contains('active')) {
+                loadBaiduIndex();
+            }
+        } else if (target === 'weibo') {
+            if (document.getElementById('weibo-tab').classList.contains('active')) {
+                loadWeiboData();
+            }
+        } else if (target === 'huanwang') {
+            if (document.getElementById('huanwang-tab').classList.contains('active')) {
+                loadHuanwangData();
+            }
         }
-        if (document.getElementById('baiduindex-tab').classList.contains('active')) {
-            loadBaiduIndex();
-        }
-        if (document.getElementById('weibo-tab').classList.contains('active')) {
-            loadWeiboData();
-        }
-    }, 60000);
+    }, 60000); // 每分钟刷新当前激活的模块
 };
