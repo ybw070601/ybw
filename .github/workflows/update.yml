@@ -5,6 +5,11 @@ on:
     - cron: '*/10 * * * *'
   workflow_dispatch:
 
+# 并发控制：确保同一时间只有一个构建运行，并取消旧的排队构建
+concurrency:
+  group: pages-build
+  cancel-in-progress: true
+
 jobs:
   update:
     runs-on: ubuntu-latest
