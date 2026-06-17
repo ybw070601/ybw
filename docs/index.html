@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>杨博文相关数据看板</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- 使用国内 CDN 加速 Chart.js -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -87,7 +88,7 @@
         <div id="weiboRankingsContainer" class="rankings-grid"></div>
     </div>
 
-    <!-- 欢网数据内容 -->
+    <!-- 欢网数据内容（仅排名，无图表） -->
     <div id="huanwang-tab" class="tab-content">
         <h3>📺 今日欢网数据 (点击表头排序)</h3>
         <table class="data-table" id="huanwangDataTable">
@@ -95,17 +96,19 @@
             <tbody id="huanwangTableBody"><tr><td colspan="3">加载中...</td></tr></tbody>
         </table>
         
-        <!-- 今日欢乐币排名+折线图 -->
-        <div class="rank-card" id="huanwangTodayRankCard" style="margin-top: 30px;">
-            <div class="rank-left"><h3>📊 今日欢乐币排名</h3><ul class="rank-list" id="huanwangTodayRankList"></ul></div>
-            <div class="rank-right"><div class="chart-header" id="huanwangTodayChartDate"></div><div class="chart-container"><canvas id="huanwangTodayTrendChart"></canvas></div></div>
-        </div>
-
-        <!-- 累计欢乐币排名（无图表） -->
-        <div class="rank-card-no-chart" id="huanwangTotalRankCard" style="margin-top: 30px;">
-            <div class="rank-left" style="max-height: none; overflow-y: visible;">
-                <h3>🏆 累计欢乐币排名</h3>
-                <ul class="rank-list" id="huanwangTotalRankList"></ul>
+        <!-- 两个排名卡片并排 -->
+        <div style="display: flex; gap: 20px; margin-top: 30px;">
+            <div class="rank-card-no-chart" style="flex:1;">
+                <div class="rank-left" style="max-height: none; overflow-y: visible;">
+                    <h3>📊 今日欢乐币排名</h3>
+                    <ul class="rank-list" id="huanwangTodayRankList"></ul>
+                </div>
+            </div>
+            <div class="rank-card-no-chart" style="flex:1;">
+                <div class="rank-left" style="max-height: none; overflow-y: visible;">
+                    <h3>🏆 累计欢乐币排名</h3>
+                    <ul class="rank-list" id="huanwangTotalRankList"></ul>
+                </div>
             </div>
         </div>
     </div>
