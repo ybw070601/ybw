@@ -592,6 +592,8 @@ function renderXunyiTable(data) {
         let cell4 = row.insertCell(4);
         cell4.textContent = item.check1;
     });
+    // 重新绑定排序事件（修复点击排序失效）
+    attachXunyiSortEvents();
 }
 function attachXunyiSortEvents() {
     let headers = document.querySelectorAll('#xunyiTableHeader th');
@@ -1036,6 +1038,8 @@ function renderHuanwangTable(todayData, totalData) {
         row.insertCell(1).textContent = item.todayVote;
         row.insertCell(2).textContent = item.totalVote;
     });
+    // 重新绑定排序事件（修复点击排序失效）
+    attachHuanwangSortEvents();
 }
 
 function huanwangSortHandler(e) {
@@ -1076,6 +1080,8 @@ function huanwangSortHandler(e) {
         row.insertCell(1).textContent = item.todayVote;
         row.insertCell(2).textContent = item.totalVote;
     });
+    // 绑定事件（因为重新生成了表格）
+    attachHuanwangSortEvents();
 }
 
 function renderHuanwangTodayRank() {
