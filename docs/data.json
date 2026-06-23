@@ -1,65 +1,65 @@
 [
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 128506,
-    "today_users": 4581,
-    "avg": 28.05,
-    "total_gift": 11860631,
-    "status": "成功"
-  },
-  {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 91478,
-    "today_users": 2520,
-    "avg": 36.3,
-    "total_gift": 10342084,
+    "today_gift": 95116,
+    "today_users": 2567,
+    "avg": 37.05,
+    "total_gift": 10345722,
     "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 125504,
-    "today_users": 4461,
-    "avg": 28.13,
-    "total_gift": 10666333,
-    "status": "成功"
-  },
-  {
-    "name": "王橹杰",
-    "id": "64787018",
-    "today_gift": 214037,
-    "today_users": 5391,
-    "avg": 39.7,
-    "total_gift": 30082865,
+    "today_gift": 129094,
+    "today_users": 4510,
+    "avg": 28.62,
+    "total_gift": 10669922,
     "status": "成功"
   },
   {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 164666,
-    "today_users": 5381,
-    "avg": 30.6,
-    "total_gift": 20187547,
+    "today_gift": 169572,
+    "today_users": 5461,
+    "avg": 31.05,
+    "total_gift": 20192454,
+    "status": "成功"
+  },
+  {
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 220594,
+    "today_users": 5498,
+    "avg": 40.12,
+    "total_gift": 30089422,
+    "status": "成功"
+  },
+  {
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 133030,
+    "today_users": 4655,
+    "avg": 28.58,
+    "total_gift": 11865155,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 130802,
-    "today_users": 3915,
-    "avg": 33.41,
-    "total_gift": 14405529,
+    "today_gift": 134306,
+    "today_users": 3979,
+    "avg": 33.75,
+    "total_gift": 14409033,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 160648,
-    "today_users": 5187,
-    "avg": 30.97,
-    "total_gift": 22275792,
+    "today_gift": 164462,
+    "today_users": 5252,
+    "avg": 31.31,
+    "total_gift": 22279606,
     "status": "成功"
   }
 ]
