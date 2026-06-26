@@ -1,5 +1,60 @@
 [
   {
+    "date": "2026-06-26",
+    "timestamp": "2026-06-26 23:50:46",
+    "records": [
+      {
+        "name": "张桂源",
+        "comment_inc": 78172,
+        "repost_inc": 1232722,
+        "like_inc": 170808,
+        "total_inc": 1481702
+      },
+      {
+        "name": "张函瑞",
+        "comment_inc": 58163,
+        "repost_inc": 666603,
+        "like_inc": 54016,
+        "total_inc": 778782
+      },
+      {
+        "name": "王橹杰",
+        "comment_inc": 62915,
+        "repost_inc": 4449970,
+        "like_inc": 105370,
+        "total_inc": 4618255
+      },
+      {
+        "name": "左奇函",
+        "comment_inc": 79243,
+        "repost_inc": 173511,
+        "like_inc": 168603,
+        "total_inc": 421357
+      },
+      {
+        "name": "陈奕恒",
+        "comment_inc": 59910,
+        "repost_inc": 502940,
+        "like_inc": 130437,
+        "total_inc": 693287
+      },
+      {
+        "name": "杨博文",
+        "comment_inc": 174130,
+        "repost_inc": 685446,
+        "like_inc": 131861,
+        "total_inc": 991437
+      },
+      {
+        "name": "陈浚铭",
+        "comment_inc": 78104,
+        "repost_inc": 438473,
+        "like_inc": 64908,
+        "total_inc": 581485
+      }
+    ]
+  },
+  {
     "date": "2026-06-25",
     "timestamp": "2026-06-25 23:50:46",
     "records": [
