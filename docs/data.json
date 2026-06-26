@@ -1,65 +1,65 @@
 [
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 23061,
-    "today_users": 1207,
-    "avg": 19.11,
-    "total_gift": 12194824,
-    "status": "成功"
-  },
-  {
-    "name": "陈奕恒",
-    "id": "64786973",
-    "today_gift": 24941,
-    "today_users": 1215,
-    "avg": 20.53,
-    "total_gift": 10967298,
-    "status": "成功"
-  },
-  {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 13618,
-    "today_users": 810,
-    "avg": 16.81,
-    "total_gift": 10608448,
+    "today_gift": 14401,
+    "today_users": 828,
+    "avg": 17.39,
+    "total_gift": 10609231,
+    "status": "成功"
+  },
+  {
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 23614,
+    "today_users": 1240,
+    "avg": 19.04,
+    "total_gift": 12195377,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 39270,
-    "today_users": 1773,
-    "avg": 22.15,
-    "total_gift": 30701115,
+    "today_gift": 40838,
+    "today_users": 1820,
+    "avg": 22.44,
+    "total_gift": 30702684,
     "status": "成功"
   },
   {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 24928,
-    "today_users": 1282,
+    "today_gift": 25783,
+    "today_users": 1326,
     "avg": 19.44,
-    "total_gift": 20628339,
+    "total_gift": 20629194,
+    "status": "成功"
+  },
+  {
+    "name": "陈奕恒",
+    "id": "64786973",
+    "today_gift": 25975,
+    "today_users": 1257,
+    "avg": 20.66,
+    "total_gift": 10968332,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 22350,
-    "today_users": 1107,
-    "avg": 20.19,
-    "total_gift": 14753112,
+    "today_gift": 23485,
+    "today_users": 1135,
+    "avg": 20.69,
+    "total_gift": 14754247,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 25921,
-    "today_users": 1638,
-    "avg": 15.82,
-    "total_gift": 22759816,
+    "today_gift": 27977,
+    "today_users": 1701,
+    "avg": 16.45,
+    "total_gift": 22761873,
     "status": "成功"
   }
 ]
