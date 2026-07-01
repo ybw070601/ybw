@@ -94,6 +94,14 @@ function getTodayBeijingDate() {
     return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
 }
 
+// ==================== 获取北京时间年月 (YYYY-MM) ====================
+function getBeijingYearMonth() {
+    const now = new Date();
+    const year = now.toLocaleString('en-CA', { timeZone: 'Asia/Shanghai' }).slice(0, 4);
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
+
 // ==================== 微博数值格式化（万/亿，两位小数） ====================
 function formatNumberToWanOrYi(num) {
     if (num === undefined || num === null) return '0';
@@ -922,18 +930,6 @@ function renderWeiboRankings() {
 // ==================== 欢网数据模块（无折线图） ====================
 const HUANWANG_API_URL_TODAY = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
 const HUANWANG_API_URL_TOTAL = 'https://tv-zone-api.huan.tv/tv-zone-mobile-api/syp/rank-v2';
-const HUANWANG_PARAMS_TODAY = {
-    category: '1',
-    subCategory: '1-B',
-    summaryType: '0',
-    activityYearMonth: '2026-06'
-};
-const HUANWANG_PARAMS_TOTAL = {
-    category: '1',
-    subCategory: '1-B',
-    summaryType: '1',
-    activityYearMonth: '2026-06'
-};
 const HUANWANG_HEADERS = {
     'Accept': '*/*',
     'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -964,9 +960,27 @@ async function fetchHuanwangData(params) {
 
 async function loadHuanwangData() {
     try {
+        const yearMonth = getBeijingYearMonth();  // 动态获取当前年月
+
+        // 今日数据参数
+        const todayParams = {
+            category: '1',
+            subCategory: '1-B',
+            summaryType: '0',
+            activityYearMonth: yearMonth
+        };
+
+        // 累计数据参数
+        const totalParams = {
+            category: '1',
+            subCategory: '1-B',
+            summaryType: '1',
+            activityYearMonth: yearMonth
+        };
+
         const [todayList, totalList] = await Promise.all([
-            fetchHuanwangData(HUANWANG_PARAMS_TODAY),
-            fetchHuanwangData(HUANWANG_PARAMS_TOTAL)
+            fetchHuanwangData(todayParams),
+            fetchHuanwangData(totalParams)
         ]);
 
         if (!todayList || !totalList) {
