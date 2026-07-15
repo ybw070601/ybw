@@ -1,56 +1,56 @@
 [
   {
     "date": "2026-07-15",
-    "timestamp": "2026-07-15 23:51:17",
+    "timestamp": "2026-07-15 23:59:29",
     "records": [
       {
         "name": "张桂源",
-        "comment_inc": 118910,
-        "repost_inc": 1322224,
-        "like_inc": 37576,
-        "total_inc": 1478710
+        "comment_inc": 119075,
+        "repost_inc": 1322797,
+        "like_inc": 37852,
+        "total_inc": 1479724
       },
       {
         "name": "张函瑞",
-        "comment_inc": 29392,
-        "repost_inc": 975514,
-        "like_inc": 23687,
-        "total_inc": 1028593
+        "comment_inc": 29536,
+        "repost_inc": 976828,
+        "like_inc": 23964,
+        "total_inc": 1030328
       },
       {
         "name": "王橹杰",
-        "comment_inc": 44508,
-        "repost_inc": 6225322,
-        "like_inc": 74943,
-        "total_inc": 6344773
+        "comment_inc": 44827,
+        "repost_inc": 6246814,
+        "like_inc": 75912,
+        "total_inc": 6367553
       },
       {
         "name": "左奇函",
-        "comment_inc": 33601,
-        "repost_inc": 137271,
-        "like_inc": 57284,
-        "total_inc": 228156
+        "comment_inc": 34041,
+        "repost_inc": 137682,
+        "like_inc": 57682,
+        "total_inc": 229405
       },
       {
         "name": "陈奕恒",
-        "comment_inc": 69176,
-        "repost_inc": 716094,
-        "like_inc": 141812,
-        "total_inc": 927082
+        "comment_inc": 69452,
+        "repost_inc": 717227,
+        "like_inc": 142515,
+        "total_inc": 929194
       },
       {
         "name": "杨博文",
-        "comment_inc": 170588,
-        "repost_inc": 757499,
-        "like_inc": 87261,
-        "total_inc": 1015348
+        "comment_inc": 170901,
+        "repost_inc": 759111,
+        "like_inc": 87774,
+        "total_inc": 1017786
       },
       {
         "name": "陈浚铭",
-        "comment_inc": 57243,
-        "repost_inc": 378522,
-        "like_inc": 49844,
-        "total_inc": 485609
+        "comment_inc": 57428,
+        "repost_inc": 380645,
+        "like_inc": 50075,
+        "total_inc": 488148
       }
     ]
   },
