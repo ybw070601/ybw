@@ -1,5 +1,60 @@
 [
   {
+    "date": "2026-09-17",
+    "timestamp": "2026-09-17 23:50:57",
+    "records": [
+      {
+        "name": "张桂源",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "张函瑞",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "王橹杰",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "左奇函",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈奕恒",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "杨博文",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈浚铭",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      }
+    ]
+  },
+  {
     "date": "2026-09-16",
     "timestamp": "2026-09-16 23:50:54",
     "records": [
@@ -1866,61 +1921,6 @@
         "repost_inc": 179335,
         "like_inc": 198342,
         "total_inc": 469655
-      }
-    ]
-  },
-  {
-    "date": "2026-08-13",
-    "timestamp": "2026-08-13 23:50:51",
-    "records": [
-      {
-        "name": "张桂源",
-        "comment_inc": 52699,
-        "repost_inc": 530795,
-        "like_inc": 26441,
-        "total_inc": 609935
-      },
-      {
-        "name": "张函瑞",
-        "comment_inc": 43609,
-        "repost_inc": 447815,
-        "like_inc": 75070,
-        "total_inc": 566494
-      },
-      {
-        "name": "王橹杰",
-        "comment_inc": 25090,
-        "repost_inc": 3176888,
-        "like_inc": 123601,
-        "total_inc": 3325579
-      },
-      {
-        "name": "左奇函",
-        "comment_inc": 19124,
-        "repost_inc": 231621,
-        "like_inc": 65023,
-        "total_inc": 315768
-      },
-      {
-        "name": "陈奕恒",
-        "comment_inc": 38441,
-        "repost_inc": 318316,
-        "like_inc": 94399,
-        "total_inc": 451156
-      },
-      {
-        "name": "杨博文",
-        "comment_inc": 114358,
-        "repost_inc": 539046,
-        "like_inc": 74785,
-        "total_inc": 728189
-      },
-      {
-        "name": "陈浚铭",
-        "comment_inc": 33839,
-        "repost_inc": 164647,
-        "like_inc": 64476,
-        "total_inc": 262962
       }
     ]
   }
