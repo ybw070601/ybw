@@ -1,65 +1,65 @@
 [
   {
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 23104,
+    "today_users": 1266,
+    "avg": 18.25,
+    "total_gift": 19805292,
+    "status": "成功"
+  },
+  {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 23383,
-    "today_users": 1114,
-    "avg": 20.99,
-    "total_gift": 17471658,
-    "status": "成功"
-  },
-  {
-    "name": "王橹杰",
-    "id": "64787018",
-    "today_gift": 74459,
-    "today_users": 3283,
-    "avg": 22.68,
-    "total_gift": 52876575,
-    "status": "成功"
-  },
-  {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 22538,
-    "today_users": 1267,
-    "avg": 17.79,
-    "total_gift": 29723904,
+    "today_gift": 24281,
+    "today_users": 1130,
+    "avg": 21.49,
+    "total_gift": 17472556,
     "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 35733,
-    "today_users": 1721,
-    "avg": 20.76,
-    "total_gift": 21726275,
+    "today_gift": 36452,
+    "today_users": 1749,
+    "avg": 20.84,
+    "total_gift": 21726993,
     "status": "成功"
   },
   {
-    "name": "杨博文",
-    "id": "64790097",
-    "today_gift": 40581,
-    "today_users": 2181,
-    "avg": 18.61,
-    "total_gift": 33564328,
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 23185,
+    "today_users": 1285,
+    "avg": 18.04,
+    "total_gift": 29724551,
+    "status": "成功"
+  },
+  {
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 76178,
+    "today_users": 3346,
+    "avg": 22.77,
+    "total_gift": 52878293,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 18421,
-    "today_users": 1331,
-    "avg": 13.84,
-    "total_gift": 24158828,
+    "today_gift": 18717,
+    "today_users": 1345,
+    "avg": 13.92,
+    "total_gift": 24159123,
     "status": "成功"
   },
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 19804526,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
+    "name": "杨博文",
+    "id": "64790097",
+    "today_gift": 42303,
+    "today_users": 2220,
+    "avg": 19.06,
+    "total_gift": 33566050,
+    "status": "成功"
   }
 ]
