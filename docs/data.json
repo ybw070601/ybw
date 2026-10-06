@@ -1,65 +1,65 @@
 [
   {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 477,
-    "today_users": 68,
-    "avg": 7.01,
-    "total_gift": 30026013,
-    "status": "成功"
-  },
-  {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 385,
-    "today_users": 80,
-    "avg": 4.81,
-    "total_gift": 20160307,
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 2462,
+    "today_users": 258,
+    "avg": 9.54,
+    "total_gift": 53921003,
     "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 1055,
-    "today_users": 124,
-    "avg": 8.51,
-    "total_gift": 22266965,
+    "today_gift": 1998,
+    "today_users": 162,
+    "avg": 12.33,
+    "total_gift": 22267908,
+    "status": "成功"
+  },
+  {
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 852,
+    "today_users": 95,
+    "avg": 8.97,
+    "total_gift": 30026388,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 877,
-    "today_users": 100,
-    "avg": 8.77,
-    "total_gift": 34169341,
-    "status": "成功"
-  },
-  {
-    "name": "左奇函",
-    "id": "60705549",
-    "today_gift": 708,
-    "today_users": 117,
-    "avg": 6.05,
-    "total_gift": 17837541,
+    "today_gift": 1593,
+    "today_users": 128,
+    "avg": 12.45,
+    "total_gift": 34170057,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 449,
-    "today_users": 86,
-    "avg": 5.22,
-    "total_gift": 24447349,
+    "today_gift": 684,
+    "today_users": 111,
+    "avg": 6.16,
+    "total_gift": 24447583,
     "status": "成功"
   },
   {
-    "name": "王橹杰",
-    "id": "64787018",
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 844,
+    "today_users": 113,
+    "avg": 7.47,
+    "total_gift": 20160766,
+    "status": "成功"
+  },
+  {
+    "name": "左奇函",
+    "id": "60705549",
     "today_gift": 0,
     "today_users": 0,
     "avg": 0,
-    "total_gift": 53920066,
+    "total_gift": 17838008,
     "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
   }
 ]
