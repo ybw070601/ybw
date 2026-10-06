@@ -2,64 +2,64 @@
   {
     "name": "张桂源",
     "id": "64767448",
-    "today_gift": 5615,
-    "today_users": 473,
-    "avg": 11.87,
-    "total_gift": 20141735,
+    "today_gift": 5737,
+    "today_users": 482,
+    "avg": 11.9,
+    "total_gift": 20141857,
     "status": "成功"
   },
   {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 6736,
-    "today_users": 501,
-    "avg": 13.45,
-    "total_gift": 17818664,
-    "status": "成功"
-  },
-  {
-    "name": "陈奕恒",
-    "id": "64786973",
-    "today_gift": 11033,
-    "today_users": 771,
-    "avg": 14.31,
-    "total_gift": 22239523,
+    "today_gift": 7205,
+    "today_users": 513,
+    "avg": 14.04,
+    "total_gift": 17819133,
     "status": "成功"
   },
   {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 3808,
-    "today_users": 464,
-    "avg": 8.21,
-    "total_gift": 30010253,
+    "today_gift": 3899,
+    "today_users": 468,
+    "avg": 8.33,
+    "total_gift": 30010344,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 15168,
-    "today_users": 1182,
-    "avg": 12.83,
-    "total_gift": 53862924,
-    "status": "成功"
-  },
-  {
-    "name": "杨博文",
-    "id": "64790097",
-    "today_gift": 12140,
-    "today_users": 811,
-    "avg": 14.97,
-    "total_gift": 34137988,
+    "today_gift": 15513,
+    "today_users": 1199,
+    "avg": 12.94,
+    "total_gift": 53863270,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 4815,
-    "today_users": 529,
-    "avg": 9.1,
-    "total_gift": 24429440,
+    "today_gift": 4970,
+    "today_users": 542,
+    "avg": 9.17,
+    "total_gift": 24429598,
     "status": "成功"
+  },
+  {
+    "name": "杨博文",
+    "id": "64790097",
+    "today_gift": 12325,
+    "today_users": 830,
+    "avg": 14.85,
+    "total_gift": 34138173,
+    "status": "成功"
+  },
+  {
+    "name": "陈奕恒",
+    "id": "64786973",
+    "today_gift": 0,
+    "today_users": 0,
+    "avg": 0,
+    "total_gift": 22239729,
+    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
   }
 ]
