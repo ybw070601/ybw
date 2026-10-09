@@ -1,18 +1,18 @@
 {
-  "update_time": "2026-10-09 16:10:32",
+  "update_time": "2026-10-09 16:20:34",
   "today": {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 16437,
-    "today_users": 1234,
-    "avg": 13.32,
-    "total_gift": 34267085,
+    "today_gift": 16592,
+    "today_users": 1243,
+    "avg": 13.35,
+    "total_gift": 34267240,
     "status": "成功"
   },
   "yesterday": {
-    "timestamp": "2026-10-08 16:10:40",
-    "today_gift": 17833,
-    "today_users": 1208,
-    "avg": 14.76
+    "timestamp": "2026-10-08 16:20:39",
+    "today_gift": 17973,
+    "today_users": 1214,
+    "avg": 14.8
   }
 }
