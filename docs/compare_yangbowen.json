@@ -1,18 +1,18 @@
 {
-  "update_time": "2026-10-10 14:10:43",
+  "update_time": "2026-10-10 14:20:40",
   "today": {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 34318487,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
+    "today_gift": 18308,
+    "today_users": 1297,
+    "avg": 14.12,
+    "total_gift": 34318755,
+    "status": "成功"
   },
   "yesterday": {
-    "timestamp": "2026-10-09 14:10:35",
-    "today_gift": 13466,
-    "today_users": 1092,
-    "avg": 12.33
+    "timestamp": "2026-10-09 14:20:31",
+    "today_gift": 13717,
+    "today_users": 1106,
+    "avg": 12.4
   }
 }
