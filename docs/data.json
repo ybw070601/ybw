@@ -1,65 +1,65 @@
 [
   {
-    "name": "王橹杰",
-    "id": "64787018",
-    "today_gift": 18114,
-    "today_users": 1295,
-    "avg": 13.99,
-    "total_gift": 54486699,
-    "status": "成功"
-  },
-  {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 5718,
-    "today_users": 435,
-    "avg": 13.14,
-    "total_gift": 18041424,
+    "today_gift": 5832,
+    "today_users": 442,
+    "avg": 13.19,
+    "total_gift": 18041538,
     "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 8998,
-    "today_users": 575,
+    "today_gift": 9216,
+    "today_users": 589,
     "avg": 15.65,
-    "total_gift": 22554249,
-    "status": "成功"
-  },
-  {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 13931,
-    "today_users": 827,
-    "avg": 16.85,
-    "total_gift": 30541897,
+    "total_gift": 22554470,
     "status": "成功"
   },
   {
     "name": "张桂源",
     "id": "64767448",
-    "today_gift": 4686,
-    "today_users": 369,
-    "avg": 12.7,
-    "total_gift": 20344227,
+    "today_gift": 4767,
+    "today_users": 378,
+    "avg": 12.61,
+    "total_gift": 20344308,
+    "status": "成功"
+  },
+  {
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 14452,
+    "today_users": 847,
+    "avg": 17.06,
+    "total_gift": 30542418,
+    "status": "成功"
+  },
+  {
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 18265,
+    "today_users": 1317,
+    "avg": 13.87,
+    "total_gift": 54486850,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 10241,
-    "today_users": 847,
-    "avg": 12.09,
-    "total_gift": 34607605,
+    "today_gift": 10546,
+    "today_users": 865,
+    "avg": 12.19,
+    "total_gift": 34607910,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 5865,
-    "today_users": 438,
-    "avg": 13.39,
-    "total_gift": 24603994,
+    "today_gift": 5968,
+    "today_users": 446,
+    "avg": 13.38,
+    "total_gift": 24604097,
     "status": "成功"
   }
 ]
