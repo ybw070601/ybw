@@ -1,5 +1,60 @@
 [
   {
+    "date": "2026-10-16",
+    "timestamp": "2026-10-16 23:50:52",
+    "records": [
+      {
+        "name": "张桂源",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "张函瑞",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "王橹杰",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "左奇函",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈奕恒",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "杨博文",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈浚铭",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      }
+    ]
+  },
+  {
     "date": "2026-10-15",
     "timestamp": "2026-10-15 23:51:03",
     "records": [
@@ -1859,61 +1914,6 @@
         "repost_inc": 5821038,
         "like_inc": 1323296,
         "total_inc": 8479452
-      },
-      {
-        "name": "陈浚铭",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      }
-    ]
-  },
-  {
-    "date": "2026-09-11",
-    "timestamp": "2026-09-11 23:51:24",
-    "records": [
-      {
-        "name": "张桂源",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "张函瑞",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "王橹杰",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "左奇函",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "陈奕恒",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "杨博文",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
       },
       {
         "name": "陈浚铭",
