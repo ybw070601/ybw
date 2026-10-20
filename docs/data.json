@@ -1,65 +1,65 @@
 [
   {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 119,
-    "today_users": 21,
-    "avg": 5.67,
-    "total_gift": 30730085,
-    "status": "成功"
-  },
-  {
-    "name": "杨博文",
-    "id": "64790097",
-    "today_gift": 125,
-    "today_users": 35,
-    "avg": 3.57,
-    "total_gift": 34899888,
-    "status": "成功"
-  },
-  {
-    "name": "陈浚铭",
-    "id": "64762675",
-    "today_gift": 55,
-    "today_users": 22,
-    "avg": 2.5,
-    "total_gift": 24704995,
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 179,
+    "today_users": 67,
+    "avg": 2.67,
+    "total_gift": 20472078,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 54861372,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
-  },
-  {
-    "name": "左奇函",
-    "id": "60705549",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 18178794,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
+    "today_gift": 1285,
+    "today_users": 183,
+    "avg": 7.02,
+    "total_gift": 54862491,
+    "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 0,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10) | 累计异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
+    "today_gift": 598,
+    "today_users": 106,
+    "avg": 5.64,
+    "total_gift": 22741299,
+    "status": "成功"
   },
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 0,
-    "today_users": 0,
-    "avg": 0,
-    "total_gift": 0,
-    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10) | 累计异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
+    "name": "左奇函",
+    "id": "60705549",
+    "today_gift": 848,
+    "today_users": 90,
+    "avg": 9.42,
+    "total_gift": 18179480,
+    "status": "成功"
+  },
+  {
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 397,
+    "today_users": 53,
+    "avg": 7.49,
+    "total_gift": 30730363,
+    "status": "成功"
+  },
+  {
+    "name": "杨博文",
+    "id": "64790097",
+    "today_gift": 763,
+    "today_users": 111,
+    "avg": 6.87,
+    "total_gift": 34900526,
+    "status": "成功"
+  },
+  {
+    "name": "陈浚铭",
+    "id": "64762675",
+    "today_gift": 387,
+    "today_users": 62,
+    "avg": 6.24,
+    "total_gift": 24705327,
+    "status": "成功"
   }
 ]
