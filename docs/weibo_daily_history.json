@@ -1,5 +1,60 @@
 [
   {
+    "date": "2026-10-20",
+    "timestamp": "2026-10-20 23:50:54",
+    "records": [
+      {
+        "name": "张桂源",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "张函瑞",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "王橹杰",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "左奇函",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈奕恒",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "杨博文",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      },
+      {
+        "name": "陈浚铭",
+        "comment_inc": 0,
+        "repost_inc": 0,
+        "like_inc": 0,
+        "total_inc": 0
+      }
+    ]
+  },
+  {
     "date": "2026-10-19",
     "timestamp": "2026-10-19 23:52:19",
     "records": [
@@ -1817,61 +1872,6 @@
   {
     "date": "2026-09-16",
     "timestamp": "2026-09-16 23:50:54",
-    "records": [
-      {
-        "name": "张桂源",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "张函瑞",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "王橹杰",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "左奇函",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "陈奕恒",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "杨博文",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      },
-      {
-        "name": "陈浚铭",
-        "comment_inc": 0,
-        "repost_inc": 0,
-        "like_inc": 0,
-        "total_inc": 0
-      }
-    ]
-  },
-  {
-    "date": "2026-09-15",
-    "timestamp": "2026-09-15 23:50:54",
     "records": [
       {
         "name": "张桂源",
