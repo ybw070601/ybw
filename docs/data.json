@@ -1,65 +1,65 @@
 [
   {
-    "name": "陈奕恒",
-    "id": "64786973",
-    "today_gift": 5368,
-    "today_users": 367,
-    "avg": 14.63,
-    "total_gift": 22865921,
-    "status": "成功"
-  },
-  {
     "name": "张桂源",
     "id": "64767448",
-    "today_gift": 2363,
-    "today_users": 216,
-    "avg": 10.94,
-    "total_gift": 20551976,
+    "today_gift": 2371,
+    "today_users": 219,
+    "avg": 10.83,
+    "total_gift": 20551984,
     "status": "成功"
   },
   {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 1585,
-    "today_users": 232,
-    "avg": 6.83,
-    "total_gift": 30786908,
+    "today_gift": 1603,
+    "today_users": 245,
+    "avg": 6.54,
+    "total_gift": 30786926,
     "status": "成功"
   },
   {
-    "name": "王橹杰",
-    "id": "64787018",
-    "today_gift": 11081,
-    "today_users": 658,
-    "avg": 16.84,
-    "total_gift": 55125006,
+    "name": "陈奕恒",
+    "id": "64786973",
+    "today_gift": 5504,
+    "today_users": 389,
+    "avg": 14.15,
+    "total_gift": 22866057,
     "status": "成功"
   },
   {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 3220,
-    "today_users": 279,
-    "avg": 11.54,
-    "total_gift": 18280007,
+    "today_gift": 3330,
+    "today_users": 287,
+    "avg": 11.6,
+    "total_gift": 18280117,
     "status": "成功"
   },
   {
-    "name": "陈浚铭",
-    "id": "64762675",
-    "today_gift": 2259,
-    "today_users": 259,
-    "avg": 8.72,
-    "total_gift": 24773979,
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 11290,
+    "today_users": 684,
+    "avg": 16.51,
+    "total_gift": 55125215,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 4469,
-    "today_users": 447,
-    "avg": 10.0,
-    "total_gift": 35089957,
+    "today_gift": 4635,
+    "today_users": 469,
+    "avg": 9.88,
+    "total_gift": 35090123,
+    "status": "成功"
+  },
+  {
+    "name": "陈浚铭",
+    "id": "64762675",
+    "today_gift": 2295,
+    "today_users": 267,
+    "avg": 8.6,
+    "total_gift": 24774015,
     "status": "成功"
   }
 ]
