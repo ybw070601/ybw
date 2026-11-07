@@ -1,65 +1,65 @@
 [
   {
-    "name": "左奇函",
-    "id": "60705549",
-    "today_gift": 1864,
-    "today_users": 210,
-    "avg": 8.88,
-    "total_gift": 18589515,
-    "status": "成功"
-  },
-  {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 3987,
-    "today_users": 257,
-    "avg": 15.51,
-    "total_gift": 23269908,
-    "status": "成功"
-  },
-  {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 1156,
-    "today_users": 117,
-    "avg": 9.88,
-    "total_gift": 30960346,
-    "status": "成功"
-  },
-  {
-    "name": "王橹杰",
-    "id": "64787018",
-    "today_gift": 5525,
-    "today_users": 439,
-    "avg": 12.59,
-    "total_gift": 55942206,
+    "today_gift": 3990,
+    "today_users": 258,
+    "avg": 15.47,
+    "total_gift": 23269911,
     "status": "成功"
   },
   {
     "name": "张桂源",
     "id": "64767448",
-    "today_gift": 1299,
+    "today_gift": 1300,
     "today_users": 142,
     "avg": 9.15,
-    "total_gift": 20784369,
+    "total_gift": 20784370,
+    "status": "成功"
+  },
+  {
+    "name": "左奇函",
+    "id": "60705549",
+    "today_gift": 1865,
+    "today_users": 211,
+    "avg": 8.84,
+    "total_gift": 18589516,
+    "status": "成功"
+  },
+  {
+    "name": "王橹杰",
+    "id": "64787018",
+    "today_gift": 5533,
+    "today_users": 441,
+    "avg": 12.55,
+    "total_gift": 55942214,
+    "status": "成功"
+  },
+  {
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 1157,
+    "today_users": 117,
+    "avg": 9.89,
+    "total_gift": 30960347,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 1642,
+    "today_gift": 1644,
     "today_users": 177,
-    "avg": 9.28,
-    "total_gift": 24988411,
+    "avg": 9.29,
+    "total_gift": 24988413,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 3259,
-    "today_users": 282,
-    "avg": 11.56,
-    "total_gift": 35665685,
+    "today_gift": 3268,
+    "today_users": 286,
+    "avg": 11.43,
+    "total_gift": 35665694,
     "status": "成功"
   }
 ]
