@@ -1,65 +1,65 @@
 [
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 2049,
-    "today_users": 192,
-    "avg": 10.67,
-    "total_gift": 20798737,
-    "status": "成功"
-  },
-  {
-    "name": "左奇函",
-    "id": "60705549",
-    "today_gift": 2851,
-    "today_users": 276,
-    "avg": 10.33,
-    "total_gift": 18612526,
+    "name": "张函瑞",
+    "id": "64761230",
+    "today_gift": 1921,
+    "today_users": 202,
+    "avg": 9.51,
+    "total_gift": 30972208,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 9265,
-    "today_users": 686,
-    "avg": 13.51,
-    "total_gift": 55996357,
-    "status": "成功"
-  },
-  {
-    "name": "陈浚铭",
-    "id": "64762675",
-    "today_gift": 1815,
-    "today_users": 225,
-    "avg": 8.07,
-    "total_gift": 25004765,
-    "status": "成功"
-  },
-  {
-    "name": "陈奕恒",
-    "id": "64786973",
-    "today_gift": 4544,
-    "today_users": 332,
+    "today_gift": 9801,
+    "today_users": 716,
     "avg": 13.69,
-    "total_gift": 23300571,
+    "total_gift": 55996893,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 3843,
-    "today_users": 414,
-    "avg": 9.28,
-    "total_gift": 35704151,
+    "today_gift": 4237,
+    "today_users": 443,
+    "avg": 9.56,
+    "total_gift": 35704545,
     "status": "成功"
   },
   {
-    "name": "张函瑞",
-    "id": "64761230",
-    "today_gift": 1912,
-    "today_users": 199,
-    "avg": 9.61,
-    "total_gift": 30972199,
+    "name": "陈浚铭",
+    "id": "64762675",
+    "today_gift": 1855,
+    "today_users": 240,
+    "avg": 7.73,
+    "total_gift": 25004805,
     "status": "成功"
+  },
+  {
+    "name": "左奇函",
+    "id": "60705549",
+    "today_gift": 2959,
+    "today_users": 286,
+    "avg": 10.35,
+    "total_gift": 18612635,
+    "status": "成功"
+  },
+  {
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 2072,
+    "today_users": 194,
+    "avg": 10.68,
+    "total_gift": 20798760,
+    "status": "成功"
+  },
+  {
+    "name": "陈奕恒",
+    "id": "64786973",
+    "today_gift": 0,
+    "today_users": 0,
+    "avg": 0,
+    "total_gift": 23300714,
+    "status": "异常: HTTPSConnectionPool(host='figure.baidu.com', port=443): Read timed out. (read timeout=10)"
   }
 ]
