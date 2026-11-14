@@ -1,65 +1,65 @@
 [
   {
-    "name": "张桂源",
-    "id": "64767448",
-    "today_gift": 6331,
-    "today_users": 538,
-    "avg": 11.77,
-    "total_gift": 20877921,
-    "status": "成功"
-  },
-  {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 6805,
-    "today_users": 647,
-    "avg": 10.52,
-    "total_gift": 31027801,
-    "status": "成功"
-  },
-  {
-    "name": "左奇函",
-    "id": "60705549",
-    "today_gift": 11228,
-    "today_users": 652,
-    "avg": 17.22,
-    "total_gift": 18725421,
+    "today_gift": 6892,
+    "today_users": 658,
+    "avg": 10.47,
+    "total_gift": 31027888,
     "status": "成功"
   },
   {
     "name": "陈奕恒",
     "id": "64786973",
-    "today_gift": 16567,
-    "today_users": 912,
-    "avg": 18.17,
-    "total_gift": 23443198,
+    "today_gift": 16798,
+    "today_users": 919,
+    "avg": 18.28,
+    "total_gift": 23443429,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 29406,
-    "today_users": 2215,
-    "avg": 13.28,
-    "total_gift": 56292167,
+    "today_gift": 29661,
+    "today_users": 2230,
+    "avg": 13.3,
+    "total_gift": 56292422,
+    "status": "成功"
+  },
+  {
+    "name": "张桂源",
+    "id": "64767448",
+    "today_gift": 6448,
+    "today_users": 544,
+    "avg": 11.85,
+    "total_gift": 20878038,
+    "status": "成功"
+  },
+  {
+    "name": "左奇函",
+    "id": "60705549",
+    "today_gift": 11493,
+    "today_users": 655,
+    "avg": 17.55,
+    "total_gift": 18725686,
     "status": "成功"
   },
   {
     "name": "陈浚铭",
     "id": "64762675",
-    "today_gift": 7500,
-    "today_users": 645,
-    "avg": 11.63,
-    "total_gift": 25080778,
+    "today_gift": 7670,
+    "today_users": 655,
+    "avg": 11.71,
+    "total_gift": 25080948,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 18817,
-    "today_users": 1091,
-    "avg": 17.25,
-    "total_gift": 35905984,
+    "today_gift": 19133,
+    "today_users": 1101,
+    "avg": 17.38,
+    "total_gift": 35906300,
     "status": "成功"
   }
 ]
