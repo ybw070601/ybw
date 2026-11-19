@@ -1,65 +1,65 @@
 [
   {
-    "name": "陈奕恒",
-    "id": "64786973",
-    "today_gift": 12534,
-    "today_users": 723,
-    "avg": 17.34,
-    "total_gift": 23570669,
-    "status": "成功"
-  },
-  {
     "name": "左奇函",
     "id": "60705549",
-    "today_gift": 9806,
-    "today_users": 521,
-    "avg": 18.82,
-    "total_gift": 18821990,
+    "today_gift": 9936,
+    "today_users": 527,
+    "avg": 18.85,
+    "total_gift": 18822120,
     "status": "成功"
   },
   {
     "name": "张函瑞",
     "id": "64761230",
-    "today_gift": 4497,
-    "today_users": 547,
-    "avg": 8.22,
-    "total_gift": 31079504,
+    "today_gift": 4586,
+    "today_users": 552,
+    "avg": 8.31,
+    "total_gift": 31079593,
+    "status": "成功"
+  },
+  {
+    "name": "陈奕恒",
+    "id": "64786973",
+    "today_gift": 12673,
+    "today_users": 733,
+    "avg": 17.29,
+    "total_gift": 23570808,
     "status": "成功"
   },
   {
     "name": "王橹杰",
     "id": "64787018",
-    "today_gift": 25414,
-    "today_users": 1764,
-    "avg": 14.41,
-    "total_gift": 56548568,
+    "today_gift": 25557,
+    "today_users": 1776,
+    "avg": 14.39,
+    "total_gift": 56548711,
     "status": "成功"
   },
   {
     "name": "张桂源",
     "id": "64767448",
-    "today_gift": 6191,
-    "today_users": 475,
-    "avg": 13.03,
-    "total_gift": 20949016,
-    "status": "成功"
-  },
-  {
-    "name": "陈浚铭",
-    "id": "64762675",
-    "today_gift": 5479,
-    "today_users": 519,
-    "avg": 10.56,
-    "total_gift": 25146092,
+    "today_gift": 6304,
+    "today_users": 479,
+    "avg": 13.16,
+    "total_gift": 20949129,
     "status": "成功"
   },
   {
     "name": "杨博文",
     "id": "64790097",
-    "today_gift": 16118,
-    "today_users": 1007,
-    "avg": 16.01,
-    "total_gift": 36093719,
+    "today_gift": 16706,
+    "today_users": 1012,
+    "avg": 16.51,
+    "total_gift": 36094307,
+    "status": "成功"
+  },
+  {
+    "name": "陈浚铭",
+    "id": "64762675",
+    "today_gift": 5486,
+    "today_users": 520,
+    "avg": 10.55,
+    "total_gift": 25146099,
     "status": "成功"
   }
 ]
